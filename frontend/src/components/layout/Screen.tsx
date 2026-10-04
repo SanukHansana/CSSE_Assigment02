@@ -1,3 +1,4 @@
+import { mobileStyles, useMobileLayout } from './mobileLayout';
 import type { PropsWithChildren } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -5,9 +6,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../../theme/theme';
 
 export function Screen({ children }: PropsWithChildren) {
+  const mobile = useMobileLayout();
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>{children}</ScrollView>
+    <SafeAreaView edges={mobile ? ['left', 'right'] : undefined} style={styles.container}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[styles.content, mobile && mobileStyles.content]}
+      >
+        {children}
+      </ScrollView>
     </SafeAreaView>
   );
 }

@@ -1,9 +1,9 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
+import { KeyboardAvoidingView, Platform, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '../application/AuthContext';
-import { AppNavigation } from '../components/layout/AppNavigation';
+import { AppNavigation, MobileTabs } from '../components/layout/AppNavigation';
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
@@ -11,9 +11,14 @@ export default function RootLayout() {
         <StatusBar style="light" />
         <View style={{ flex: 1 }}>
           <AppNavigation />
-          <View style={{ flex: 1 }}>
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            enabled={Platform.OS !== 'web'}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
             <Stack screenOptions={{ headerShown: false }} />
-          </View>
+          </KeyboardAvoidingView>
+          <MobileTabs />
         </View>
       </AuthProvider>
     </SafeAreaProvider>

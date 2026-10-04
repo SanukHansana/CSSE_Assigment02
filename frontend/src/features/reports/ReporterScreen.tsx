@@ -1,3 +1,4 @@
+import { mobileStyles, useMobileLayout } from '../../components/layout/mobileLayout';
 import { MapPicker } from '../../components/maps/MapPicker';
 import { Action } from '../../components/ui/Action';
 import { useAuth } from '../../application/AuthContext';
@@ -49,6 +50,7 @@ function Field({
   limit?: number;
   numeric?: boolean;
 }) {
+  const mobile = useMobileLayout();
   return (
     <View style={s.field}>
       <Text style={s.label}>{title}</Text>
@@ -61,7 +63,7 @@ function Field({
         maxLength={limit}
         autoCapitalize="none"
         keyboardType={numeric ? 'numbers-and-punctuation' : 'default'}
-        style={[s.input, multiline && s.multiline]}
+        style={[s.input, mobile && mobileStyles.input, multiline && s.multiline]}
       />
     </View>
   );
@@ -73,6 +75,7 @@ export function ReporterScreen({
   workspace?: 'reports' | 'relief' | 'warnings' | 'rescue' | 'admin';
   authMode?: 'login' | 'register';
 }) {
+  const mobile = useMobileLayout();
   const wide = useWindowDimensions().width >= 900;
   const { session, setSession } = useAuth();
   const [register, setRegister] = useState(authMode === 'register');
@@ -286,13 +289,13 @@ export function ReporterScreen({
 
   if (session && ['PENDING', 'REJECTED'].includes(session.user.approvalStatus || '')) {
     return (
-      <SafeAreaView style={s.root}>
-        <ScrollView contentContainerStyle={s.content}>
+      <SafeAreaView edges={mobile ? ['left', 'right'] : undefined} style={s.root}>
+        <ScrollView contentContainerStyle={[s.content, mobile && mobileStyles.content]}>
           <Link href="/" style={s.link}>
             ← Home
           </Link>
-          <Text style={s.title}>Officer Application</Text>
-          <View style={s.card}>
+          <Text style={[s.title, mobile && mobileStyles.title]}>Officer Application</Text>
+          <View style={[s.card, mobile && mobileStyles.card]}>
             <Text style={s.heading}>{session.user.displayName}</Text>
             <Text style={s.body}>
               Requested role: {session.user.requestedRole?.replaceAll('_', ' ')}
@@ -335,12 +338,12 @@ export function ReporterScreen({
     );
   if (session && workspace === 'admin')
     return (
-      <SafeAreaView style={s.root}>
-        <View style={s.content}>
+      <SafeAreaView edges={mobile ? ['left', 'right'] : undefined} style={s.root}>
+        <View style={[s.content, mobile && mobileStyles.content]}>
           <Link href="/" style={s.link}>
             ← Home
           </Link>
-          <Text style={s.title}>Admin access required</Text>
+          <Text style={[s.title, mobile && mobileStyles.title]}>Admin access required</Text>
           <Text style={s.body}>This account does not have the Admin role.</Text>
         </View>
       </SafeAreaView>
@@ -390,9 +393,9 @@ export function ReporterScreen({
     );
   }
   return (
-    <SafeAreaView style={s.root}>
+    <SafeAreaView edges={mobile ? ['left', 'right'] : undefined} style={s.root}>
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        <View style={s.content}>
+        <View style={[s.content, mobile && mobileStyles.content]}>
           <View style={s.navigation}>
             <Link href="/" style={s.link}>
               Home
@@ -408,7 +411,7 @@ export function ReporterScreen({
                     : 'Ground Hazard Reports'}
             </Text>
           </View>
-          <Text accessibilityRole="header" style={s.title}>
+          <Text accessibilityRole="header" style={[s.title, mobile && mobileStyles.title]}>
             {!session
               ? register
                 ? 'Create your account'
@@ -435,12 +438,12 @@ export function ReporterScreen({
             </Text>
           ) : null}
           {!session ? (
-            <View style={[s.card, s.auth]}>
+            <View style={[s.card, mobile && mobileStyles.card, s.auth]}>
               {register && (
                 <>
                   <Field title="Full name" value={name} onChange={setName} limit={100} />
                   <Text style={s.label}>Account type</Text>
-                  <View style={s.actions}>
+                  <View style={[s.actions, mobile && mobileStyles.actions]}>
                     {['CITIZEN', 'COMMUNITY_VOLUNTEER', 'DUTY_OFFICER', 'DMC_OFFICER'].map(
                       (role) => (
                         <Pressable
@@ -486,7 +489,7 @@ export function ReporterScreen({
               />
             </View>
           ) : !reporterRole ? (
-            <View style={s.card}>
+            <View style={[s.card, mobile && mobileStyles.card]}>
               <Text style={s.heading}>Officer account</Text>
               <Text style={s.muted}>
                 This workspace is for citizens and community volunteers. Use the navigation above to
@@ -495,7 +498,7 @@ export function ReporterScreen({
             </View>
           ) : (
             <>
-              <View style={s.actions}>
+              <View style={[s.actions, mobile && mobileStyles.actions]}>
                 <Action title="New Report" disabled={busy} onPress={newReport} />
                 <Action
                   title="My Reports"
@@ -505,7 +508,7 @@ export function ReporterScreen({
                 />
               </View>
               {tab === 'mine' ? (
-                <View style={s.card}>
+                <View style={[s.card, mobile && mobileStyles.card]}>
                   <Text style={s.heading}>Your ground reports</Text>
                   {reports.items.length === 0 && (
                     <Text style={s.muted}>No reports yet. Create your first report.</Text>
@@ -532,7 +535,7 @@ export function ReporterScreen({
                       <Text style={s.status}>{label(item.status)}</Text>
                     </Pressable>
                   ))}
-                  <View style={s.actions}>
+                  <View style={[s.actions, mobile && mobileStyles.actions]}>
                     <Action
                       title="Previous"
                       secondary
@@ -551,7 +554,7 @@ export function ReporterScreen({
               ) : (
                 <>
                   {report && (
-                    <View style={s.actions}>
+                    <View style={[s.actions, mobile && mobileStyles.actions]}>
                       <Text style={s.label}>{report.reference}</Text>
                       <Text style={s.status}>{label(report.status)}</Text>
                       <Action
@@ -566,12 +569,18 @@ export function ReporterScreen({
                       />
                     </View>
                   )}
-                  <View style={[s.columns, wide && { flexDirection: 'row' }]}>
-                    <View style={s.mainColumn}>
-                      <View style={s.card}>
+                  <View
+                    style={[
+                      s.columns,
+                      mobile && mobileStyles.columns,
+                      wide && { flexDirection: 'row' },
+                    ]}
+                  >
+                    <View style={[s.mainColumn, mobile && mobileStyles.column]}>
+                      <View style={[s.card, mobile && mobileStyles.card]}>
                         <Text style={s.heading}>Reported condition</Text>
                         <Text style={s.label}>Hazard type *</Text>
-                        <View style={s.actions}>
+                        <View style={[s.actions, mobile && mobileStyles.actions]}>
                           {hazards.map((value) => (
                             <Pressable
                               key={value}
@@ -603,7 +612,7 @@ export function ReporterScreen({
                         )}
                         <Text style={s.counter}>{description.length}/500</Text>
                       </View>
-                      <View style={s.card}>
+                      <View style={[s.card, mobile && mobileStyles.card]}>
                         <Text style={s.heading}>Photo evidence *</Text>
                         {Boolean(photo?.uri || savedPhotoUri) && (
                           <Image
@@ -614,7 +623,7 @@ export function ReporterScreen({
                                 ? { headers: { Authorization: `Bearer ${token}` } }
                                 : {}),
                             }}
-                            style={s.photo}
+                            style={[s.photo, mobile && mobileStyles.photo]}
                             resizeMode="cover"
                           />
                         )}
@@ -624,7 +633,7 @@ export function ReporterScreen({
                             'Choose a clear JPEG or PNG photo, up to 5 MB.'}
                         </Text>
                         {!readonly && !confirm && (
-                          <View style={s.actions}>
+                          <View style={[s.actions, mobile && mobileStyles.actions]}>
                             <Action
                               title={photo || report?.photo ? 'Replace photo' : 'Browse Photos'}
                               secondary
@@ -657,8 +666,8 @@ export function ReporterScreen({
                         )}
                       </View>
                     </View>
-                    <View style={s.sideColumn}>
-                      <View style={s.card}>
+                    <View style={[s.sideColumn, mobile && mobileStyles.column]}>
+                      <View style={[s.card, mobile && mobileStyles.card]}>
                         <Text style={s.heading}>Hazard location *</Text>
                         <MapPicker
                           latitude={latitude}
@@ -724,7 +733,7 @@ export function ReporterScreen({
                           />
                         )}
                       </View>
-                      <View style={s.card}>
+                      <View style={[s.card, mobile && mobileStyles.card]}>
                         <Text style={s.heading}>Reporting information</Text>
                         <Text style={s.label}>{session.user.displayName}</Text>
                         <Text style={s.muted}>
@@ -744,7 +753,7 @@ export function ReporterScreen({
                     </View>
                   </View>
                   {readonly ? (
-                    <View style={s.card}>
+                    <View style={[s.card, mobile && mobileStyles.card]}>
                       <Text style={s.heading}>Report activity</Text>
                       {report.history.map((event) => (
                         <Text key={event.id} style={s.body}>
@@ -753,7 +762,7 @@ export function ReporterScreen({
                       ))}
                     </View>
                   ) : (
-                    <View style={s.actions}>
+                    <View style={[s.actions, mobile && mobileStyles.actions]}>
                       {confirm ? (
                         <>
                           <Action

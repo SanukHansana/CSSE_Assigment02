@@ -43,16 +43,24 @@ export function AdminScreen({ session, onSignOut }: { session: Session; onSignOu
   }
   async function decide(item: Account, approved: boolean) {
     if (!item.id || !note.trim()) throw new Error('Enter a verification note or rejection reason.');
-    await request(`/api/dmc/admin/applications/${item.id}/decision`, session.accessToken, 'POST', {
-      approved,
-      note: note.trim(),
-    });
+    const decision = await request<Account>(
+      `/api/dmc/admin/applications/${item.id}/decision`,
+      session.accessToken,
+      'POST',
+      {
+        approved,
+        note: note.trim(),
+      },
+    );
     await load(page);
     setNote('');
     setMessage(
-      approved
+      (approved
         ? `${item.displayName} is approved. Officer access is now enabled.`
-        : `${item.displayName} was rejected. Officer access remains blocked.`,
+        : `${item.displayName} was rejected. Officer access remains blocked.`) +
+        (decision.emailNotificationStatus
+          ? ` Email notification: ${decision.emailNotificationStatus}.`
+          : ''),
     );
   }
   return (
@@ -176,7 +184,8 @@ export function AdminScreen({ session, onSignOut }: { session: Session; onSignOu
                   <Text style={s.heading}>Confirm access for {item.displayName}</Text>
                   <Text style={s.body}>
                     Check the identity and eligibility of this applicant before confirming. Your
-                    decision and note will be recorded.
+                    decision and note will be recorded. An email notification will be sent to{' '}
+                    {item.email} if email delivery is enabled.
                   </Text>
                   <TextInput
                     accessibilityLabel={`Verification note for ${item.displayName}`}

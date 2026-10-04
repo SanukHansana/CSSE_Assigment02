@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions } from 'react-native';
 export function Action({
   title,
   onPress,
@@ -12,6 +12,7 @@ export function Action({
   secondary?: boolean;
   danger?: boolean;
 }) {
+  const mobile = useWindowDimensions().width < 700;
   const destructive = danger || /reject|cancel|close incident/i.test(title);
   const positive = /approv|verif|complete|resolved|confirm submission/i.test(title) && !destructive;
   const quiet =
@@ -19,12 +20,15 @@ export function Action({
     /^(previous|next|back|reload|refresh|load|new |clear|sign out|map|open.+map)/i.test(title);
   return (
     <Pressable
+      hitSlop={4}
+      android_ripple={{ color: quiet ? '#D4EAE6' : '#FFFFFF22' }}
       accessibilityRole="button"
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         s.button,
+        mobile && s.mobileButton,
         quiet && s.quiet,
         positive && s.positive,
         destructive && s.danger,
@@ -36,6 +40,7 @@ export function Action({
   );
 }
 const s = StyleSheet.create({
+  mobileButton: { minHeight: 50, paddingHorizontal: 16, borderRadius: 13 },
   button: {
     backgroundColor: '#173F5F',
     paddingHorizontal: 20,

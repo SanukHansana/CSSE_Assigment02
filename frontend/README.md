@@ -108,3 +108,17 @@ The browser preview also confirmed OpenStreetMap tiles render and clicking the m
 Citizens now post essential-supply needs through **My Needs**. Community Volunteers browse **Community Support**, offer their own resources and mark accepted offers delivered. Citizens confirm receipt; full confirmed quantity closes the need as fulfilled. Official DMC inventory remains separate. See [the flow and API guide](../backend/docs/community-support.md).
 
 Run `npm run test:coverage` for the whole frontend's line/branch gates. Run `npm run check` for types, lint and formatting. [Coverage scope and results](../backend/docs/test-coverage.md) include both applications separately.
+
+## Secondary mobile interface
+
+Desktop web remains the primary interface for every role. At phone widths below 700 px, non-admin screens use compact navy/teal headers, an expandable account menu, role-specific bottom tabs, stacked cards, larger touch controls and reduced spacing. Login/registration, application status, ground-report submission/review, DMC dashboard, resources/shelters, warnings, rescue, community support and connection screens remain available. Admin retains its desktop presentation; no role is restricted to mobile.
+
+The phone Home screen has an expandable reporting-flow guide. Native forms use keyboard avoidance, and header/tab safe areas protect navigation from device insets. Existing maps, evidence uploads, GPS permissions, confirmations, version checks and role permissions retain their behavior. Desktop layout styles are retained. No additional runtime packages were added.
+
+Run `npm run web` for the main interface; use the browser's responsive viewport at 390 × 844 or 320 × 740 to inspect the secondary phone layout. Run `npm start` for Expo's device/development-build entry point. A physical device must use the computer's reachable backend URL via `EXPO_PUBLIC_API_BASE_URL`; localhost points to the device itself. Actual iOS/Android keyboard, safe-area, GPS and upload behavior still require device testing.
+
+Current frontend verification: 124 passing tests, 92.22% line coverage, 87.95% branch coverage, 90.95% statement coverage and 86.71% function coverage. Tests explicitly use desktop and phone dimensions; types/lint/formatting and web export are checked. Suggested manual commit: `feat: add secondary mobile layouts and role navigation`.
+
+## Brevo warning and officer-decision emails
+
+Warning drafts default to Email. Preview → enter explicit recipients → Broadcast Warning Email → Confirm Action sends through the backend when Brevo is configured. The UI distinguishes provider acceptance, known failure, and uncertain send outcomes; it does not claim confirmed inbox delivery. Admin applicant decisions trigger email notifications and show their notification status. SMS/push/audible options remain labelled simulations. Both desktop and secondary mobile screens use this flow. See [Brevo setup and safeguards](../backend/docs/brevo-email.md).

@@ -1,3 +1,4 @@
+import { mobileStyles, useMobileLayout } from '../../components/layout/mobileLayout';
 import { Action } from '../../components/ui/Action';
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -34,6 +35,7 @@ const checks: [keyof Checklist, string][] = [
 const label = (value: string) => value.replaceAll('_', ' ');
 
 export function OfficerScreen({ session, onSignOut }: { session: Session; onSignOut: () => void }) {
+  const mobile = useMobileLayout();
   const wide = useWindowDimensions().width >= 900;
   const [report, setReport] = useState<Report | null>(null);
   const [queue, setQueue] = useState<ReportPage>({ items: [], totalPages: 0 });
@@ -144,7 +146,7 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
     );
   }
   return (
-    <SafeAreaView style={s.root}>
+    <SafeAreaView edges={mobile ? ['left', 'right'] : undefined} style={s.root}>
       <View style={[s.shell, wide && { flexDirection: 'row' }]}>
         {wide && (
           <View style={s.sidebar}>
@@ -161,14 +163,17 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
             </Text>
           </View>
         )}
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={s.content}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[s.content, mobile && mobileStyles.content]}
+        >
           <View style={s.top}>
             <Link href="/" style={s.link}>
               DMC / Ground Reports
             </Link>
             <Text style={s.muted}>{session.user.displayName} · Duty Officer</Text>
           </View>
-          <Text accessibilityRole="header" style={s.title}>
+          <Text accessibilityRole="header" style={[s.title, mobile && mobileStyles.title]}>
             {report ? 'Ground Hazard Report' : 'Ground Reports Review Queue'}
           </Text>
           {error ? (
@@ -182,7 +187,7 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
             </Text>
           ) : null}
           {!report ? (
-            <View style={s.card}>
+            <View style={[s.card, mobile && mobileStyles.card]}>
               <Text style={s.heading}>Find reports to review</Text>
               <TextInput
                 accessibilityLabel="Search reports"
@@ -191,9 +196,9 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
                 editable={!busy}
                 maxLength={100}
                 placeholder="Search reference, reporter, or description"
-                style={s.input}
+                style={[s.input, mobile && mobileStyles.input]}
               />
-              <View style={s.actions}>
+              <View style={[s.actions, mobile && mobileStyles.actions]}>
                 {['SUBMITTED', 'UNDER_REVIEW', 'VERIFIED', 'REJECTED'].map((value) => (
                   <Pressable
                     key={value}
@@ -223,7 +228,7 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
                 <Text style={s.muted}>No matching reports.</Text>
               ) : (
                 queue.items.map((item) => (
-                  <View key={item.id} style={s.row}>
+                  <View key={item.id} style={[s.row, mobile && mobileStyles.row]}>
                     <View style={{ flex: 1, gap: 8 }}>
                       <Text style={s.heading}>{item.reference}</Text>
                       <Text style={s.muted}>
@@ -247,7 +252,7 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
                 ))
               )}
               {loaded && (
-                <View style={s.actions}>
+                <View style={[s.actions, mobile && mobileStyles.actions]}>
                   <Action
                     title="Previous"
                     disabled={busy || page === 0}
@@ -264,7 +269,7 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
             </View>
           ) : (
             <>
-              <View style={s.actions}>
+              <View style={[s.actions, mobile && mobileStyles.actions]}>
                 <Text style={s.heading}>{report.reference}</Text>
                 <Text style={s.badge}>{label(report.status)}</Text>
                 <Action
@@ -293,9 +298,15 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
               {report.status === 'REJECTED' && (
                 <Text style={s.error}>Rejected: {report.verification?.rejectionReason}</Text>
               )}
-              <View style={[s.columns, wide && { flexDirection: 'row' }]}>
-                <View style={s.main}>
-                  <View style={s.card}>
+              <View
+                style={[
+                  s.columns,
+                  mobile && mobileStyles.columns,
+                  wide && { flexDirection: 'row' },
+                ]}
+              >
+                <View style={[s.main, mobile && mobileStyles.column]}>
+                  <View style={[s.card, mobile && mobileStyles.card]}>
                     <Text style={s.heading}>Hazard information</Text>
                     <Text style={s.body}>{label(report.hazardType || '')}</Text>
                     <Text style={s.muted}>
@@ -307,7 +318,7 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
                     </Text>
                     <Text style={s.body}>{report.description}</Text>
                   </View>
-                  <View style={s.card}>
+                  <View style={[s.card, mobile && mobileStyles.card]}>
                     <Text style={s.heading}>Photo evidence</Text>
                     {photoUri ? (
                       <Image
@@ -318,14 +329,14 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
                             : {}),
                         }}
                         accessibilityLabel="Reported hazard evidence"
-                        style={s.photo}
+                        style={[s.photo, mobile && mobileStyles.photo]}
                       />
                     ) : (
                       <Text style={s.muted}>Photo preview unavailable or loading.</Text>
                     )}
                     <Text style={s.muted}>{report.photo?.originalFilename}</Text>
                   </View>
-                  <View style={s.card}>
+                  <View style={[s.card, mobile && mobileStyles.card]}>
                     <Text style={s.heading}>Reported location</Text>
                     <Text style={s.body}>{report.location?.areaLabel}</Text>
                     <Text style={s.muted}>
@@ -346,7 +357,7 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
                       />
                     )}
                   </View>
-                  <View style={s.card}>
+                  <View style={[s.card, mobile && mobileStyles.card]}>
                     <Text style={s.heading}>Report activity</Text>
                     {report.history.map((event) => (
                       <Text key={event.id} style={s.body}>
@@ -355,9 +366,9 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
                     ))}
                   </View>
                 </View>
-                <View style={s.side}>
+                <View style={[s.side, mobile && mobileStyles.column]}>
                   {terminal ? (
-                    <View style={s.card}>
+                    <View style={[s.card, mobile && mobileStyles.card]}>
                       <Text style={s.heading}>Verification details</Text>
                       <Text style={s.body}>Decision: {report.verification?.decision}</Text>
                       <Text style={s.body}>Officer: {report.verification?.officerDisplayName}</Text>
@@ -384,7 +395,7 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
                       ))}
                     </View>
                   ) : (
-                    <View style={s.card}>
+                    <View style={[s.card, mobile && mobileStyles.card]}>
                       <Text style={s.heading}>Verification decision</Text>
                       {report.status === 'SUBMITTED' ? (
                         <>
@@ -417,7 +428,7 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
                           {checks.map(([key, title]) => (
                             <View key={key} style={{ gap: 8 }}>
                               <Text style={s.body}>{title}</Text>
-                              <View style={s.actions}>
+                              <View style={[s.actions, mobile && mobileStyles.actions]}>
                                 {([true, false, null] as const).map((value) => (
                                   <Pressable
                                     key={String(value)}
@@ -450,7 +461,7 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
                             editable={!busy && editing && !pending}
                             multiline
                             maxLength={2000}
-                            style={[s.input, { minHeight: 100 }]}
+                            style={[s.input, mobile && mobileStyles.input, { minHeight: 100 }]}
                           />
                           <Action
                             title="Save Review"
@@ -474,7 +485,7 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
                             Unverified reports cannot support official assessment.
                           </Text>
                           {!pending ? (
-                            <View style={s.actions}>
+                            <View style={[s.actions, mobile && mobileStyles.actions]}>
                               <Action
                                 title="Verify Report"
                                 disabled={busy || !editing || !passed}
@@ -501,7 +512,11 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
                                   editable={!busy}
                                   multiline
                                   maxLength={2000}
-                                  style={[s.input, { minHeight: 100 }]}
+                                  style={[
+                                    s.input,
+                                    mobile && mobileStyles.input,
+                                    { minHeight: 100 },
+                                  ]}
                                 />
                               )}
                               <Text style={s.muted}>

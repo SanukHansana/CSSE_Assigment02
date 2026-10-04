@@ -1,3 +1,4 @@
+import { mobileStyles, useMobileLayout } from '../../components/layout/mobileLayout';
 import { Action } from '../../components/ui/Action';
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -29,6 +30,13 @@ interface Warning {
   createdBy: string;
   createdAt: string;
   deliveries?: { channel: string; status: string; attempts: number; lastAttemptAt: string }[];
+  emailDispatch?: {
+    requestId: string;
+    recipients: string[];
+    status: string;
+    providerMessageId: string | null;
+    message: string;
+  };
   history?: { requestId: string; action: string; detail: string; officer: string; at: string }[];
 }
 interface Page {
@@ -41,16 +49,18 @@ const blank = () => ({
   affectedArea: '',
   message: '',
   instructions: '',
-  channels: ['SMS'],
+  channels: ['EMAIL'],
   validUntil: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
 });
 const channelNames: Record<string, string> = {
-  SMS: 'SMS',
+  EMAIL: 'Email (Brevo)',
+  SMS: 'SMS (simulation)',
   PUSH_NOTIFICATION: 'Push notification',
   AUDIBLE_ALERT: 'Audible alert',
 };
 
 export function WarningScreen({ session, onSignOut }: { session: Session; onSignOut: () => void }) {
+  const mobile = useMobileLayout();
   const wide = useWindowDimensions().width >= 900;
   const [form, setForm] = useState(blank);
   const [selected, setSelected] = useState<Warning | null>(null);
@@ -62,6 +72,7 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [failureChannel, setFailureChannel] = useState<string | null>(null);
+  const [recipientText, setRecipientText] = useState('');
   const [cancelReason, setCancelReason] = useState('');
   const [confirm, setConfirm] = useState<'broadcast' | 'retry' | 'cancel' | null>(null);
   const [operation, setOperation] = useState<{ id: string; signature: string } | null>(null);
@@ -98,6 +109,7 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
       channels: warning.channels,
       validUntil: warning.validUntil,
     });
+    setRecipientText(warning.emailDispatch?.recipients.join(', ') || '');
     setPreview(false);
   }
   async function load(next = 0) {
@@ -109,10 +121,22 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
     if (!selected || !confirm) return;
     if (confirm === 'cancel' && !cancelReason.trim())
       throw new Error('Provide a cancellation reason.');
+    const emailSend = confirm !== 'cancel' && selected.channels.includes('EMAIL');
+    const recipients = recipientText
+      .split(/[,;\n]/)
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean);
+    if (
+      emailSend &&
+      (recipients.length < 1 ||
+        recipients.length > 50 ||
+        recipients.some((value) => !/^\S+@\S+\.\S+$/.test(value)))
+    )
+      throw new Error('Enter 1–50 valid recipient email addresses, separated by commas.');
     const signature = JSON.stringify([
       selected.id,
       confirm,
-      confirm === 'cancel' ? cancelReason.trim() : failureChannel,
+      confirm === 'cancel' ? cancelReason.trim() : emailSend ? recipients : failureChannel,
     ]);
     if (operation && operation.signature !== signature)
       throw new Error(
@@ -125,9 +149,15 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
     const body =
       confirm === 'cancel'
         ? { requestId, expectedVersion: selected.version, reason: cancelReason.trim() }
-        : { requestId, expectedVersion: selected.version, simulateFailureChannel: failureChannel };
+        : emailSend
+          ? { requestId, expectedVersion: selected.version, recipients }
+          : {
+              requestId,
+              expectedVersion: selected.version,
+              simulateFailureChannel: failureChannel,
+            };
     const saved = await request<Warning>(
-      `/api/dmc/warnings/${selected.id}/${confirm}`,
+      `/api/dmc/warnings/${selected.id}/${emailSend ? 'email' : confirm}`,
       session.accessToken,
       'POST',
       body,
@@ -138,7 +168,9 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
     setMessage(
       confirm === 'cancel'
         ? 'Warning cancelled. This cannot recall previously sent alerts.'
-        : 'Simulation recorded. No real notifications were sent.',
+        : emailSend
+          ? `Email status: ${saved.emailDispatch?.status || 'UNKNOWN'}. ${saved.emailDispatch?.message || 'Reload to inspect the recorded outcome.'}`
+          : 'Simulation recorded. No real notifications were sent.',
     );
   }
   async function save(showPreview = false) {
@@ -179,7 +211,7 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
     ['validUntil', 'Valid until (ISO date/time)', 40],
   ];
   return (
-    <SafeAreaView style={s.root}>
+    <SafeAreaView edges={mobile ? ['left', 'right'] : undefined} style={s.root}>
       <View style={[s.shell, wide && { flexDirection: 'row' }]}>
         {wide && (
           <View style={s.sidebar}>
@@ -198,16 +230,16 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
         )}
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={s.content}
+          contentContainerStyle={[s.content, mobile && mobileStyles.content]}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={s.row}>
+          <View style={[s.row, mobile && mobileStyles.row]}>
             <Link href="/" style={s.link}>
               ← Home
             </Link>
             <Text style={s.muted}>{session.user.displayName}</Text>
           </View>
-          <Text accessibilityRole="header" style={s.title}>
+          <Text accessibilityRole="header" style={[s.title, mobile && mobileStyles.title]}>
             {preview ? 'Preview Warning' : 'Compose Warning'}
           </Text>
           <Text style={s.muted}>Create and review an official warning draft.</Text>
@@ -225,7 +257,7 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                   {message}
                 </Text>
               ) : null}
-              <View style={s.row}>
+              <View style={[s.row, mobile && mobileStyles.row]}>
                 <Action
                   title="New Warning"
                   disabled={busy}
@@ -261,8 +293,14 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                   />
                 )}
               </View>
-              <View style={[s.columns, wide && { flexDirection: 'row' }]}>
-                <View style={[s.card, { flex: 3 }]}>
+              <View
+                style={[
+                  s.columns,
+                  mobile && mobileStyles.columns,
+                  wide && { flexDirection: 'row' },
+                ]}
+              >
+                <View style={[s.card, { flex: 3 }, mobile && mobileStyles.card]}>
                   {preview ? (
                     <>
                       <View
@@ -296,17 +334,46 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                         onPress={() => setPreview(false)}
                       />
                       <Text style={s.note}>
-                        Simulation only: no actual SMS, push notifications, or audible alerts are
-                        sent. Delivery results below represent channel simulations, not recipient
-                        counts.
+                        Email sends through Brevo to the explicit recipients below. SMS, push and
+                        audible channels remain simulations. ACCEPTED means Brevo accepted the
+                        email; it does not confirm delivery to every inbox.
                       </Text>
+                      {selected?.channels.includes('EMAIL') && (
+                        <View style={{ gap: 12 }}>
+                          <Text style={s.heading}>Email recipients</Text>
+                          <TextInput
+                            accessibilityLabel="Warning email recipients"
+                            placeholder="person@example.com, another@example.com"
+                            value={recipientText}
+                            onChangeText={setRecipientText}
+                            editable={!busy && !selected.emailDispatch}
+                            multiline
+                            maxLength={13000}
+                            autoCapitalize="none"
+                            keyboardType="email-address"
+                            style={[s.input, mobile && mobileStyles.input]}
+                          />
+                          <Text style={s.muted}>
+                            Up to 50 addresses. Each recipient receives a separate email; addresses
+                            are not shared with the other recipients.
+                          </Text>
+                          {selected.emailDispatch && (
+                            <Text style={s.note}>
+                              {selected.emailDispatch.status}: {selected.emailDispatch.message}
+                              {selected.emailDispatch.providerMessageId
+                                ? ` Reference: ${selected.emailDispatch.providerMessageId}`
+                                : ''}
+                            </Text>
+                          )}
+                        </View>
+                      )}
                       {selected && (
                         <>
                           <Text style={s.heading}>
                             Status: {selected.status}
                             {expired ? ' · EXPIRED' : ''}
                           </Text>
-                          <Text style={s.heading}>Simulated delivery status</Text>
+                          <Text style={s.heading}>Channel status</Text>
                           {(selected.deliveries || []).length === 0 && (
                             <Text style={s.muted}>Not broadcast yet.</Text>
                           )}
@@ -319,38 +386,55 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                           ))}
                           {selected.status !== 'CANCELLED' && !expired && (
                             <>
-                              <Text style={s.muted}>
-                                Optional: simulate a channel failure to demonstrate retry.
-                              </Text>
-                              <View style={s.row}>
-                                {[null, ...selected.channels].map((value) => (
-                                  <Pressable
-                                    key={value || 'none'}
-                                    accessibilityRole="button"
-                                    accessibilityState={{ selected: failureChannel === value }}
-                                    disabled={busy || confirm !== null}
-                                    onPress={() => setFailureChannel(value)}
-                                    style={[
-                                      s.chip,
-                                      failureChannel === value && { backgroundColor: '#D9EAFD' },
-                                    ]}
-                                  >
-                                    <Text style={s.body}>
-                                      {value ? channelNames[value] : 'No failure'}
-                                    </Text>
-                                  </Pressable>
-                                ))}
-                              </View>
-                              <View style={s.row}>
+                              {!selected.channels.includes('EMAIL') && (
+                                <>
+                                  <Text style={s.muted}>
+                                    Optional: simulate a channel failure to demonstrate retry.
+                                  </Text>
+                                  <View style={[s.row, mobile && mobileStyles.row]}>
+                                    {[
+                                      null,
+                                      ...selected.channels.filter((channel) => channel !== 'EMAIL'),
+                                    ].map((value) => (
+                                      <Pressable
+                                        key={value || 'none'}
+                                        accessibilityRole="button"
+                                        accessibilityState={{ selected: failureChannel === value }}
+                                        disabled={busy || confirm !== null}
+                                        onPress={() => setFailureChannel(value)}
+                                        style={[
+                                          s.chip,
+                                          failureChannel === value && {
+                                            backgroundColor: mobile ? '#DCEFE8' : '#D9EAFD',
+                                          },
+                                        ]}
+                                      >
+                                        <Text style={s.body}>
+                                          {value ? channelNames[value] : 'No failure'}
+                                        </Text>
+                                      </Pressable>
+                                    ))}
+                                  </View>
+                                </>
+                              )}
+                              <View style={[s.row, mobile && mobileStyles.row]}>
                                 {selected.status === 'DRAFT' ? (
                                   <Action
-                                    title="Broadcast Warning (Simulation)"
+                                    title={
+                                      selected.channels.includes('EMAIL')
+                                        ? 'Broadcast Warning Email'
+                                        : 'Broadcast Warning (Simulation)'
+                                    }
                                     disabled={busy || !!confirm}
                                     onPress={() => setConfirm('broadcast')}
                                   />
                                 ) : (
                                   <Action
-                                    title="Retry Failed Channels"
+                                    title={
+                                      selected.channels.includes('EMAIL')
+                                        ? 'Retry Failed Email'
+                                        : 'Retry Failed Channels'
+                                    }
                                     disabled={
                                       busy ||
                                       !!confirm ||
@@ -382,12 +466,13 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                                   value={cancelReason}
                                   onChangeText={setCancelReason}
                                   maxLength={500}
-                                  style={s.input}
+                                  style={[s.input, mobile && mobileStyles.input]}
                                 />
                               )}
                               <Text style={s.muted}>
-                                This records an officer action. Broadcasts use a mock adapter and do
-                                not reach real people.
+                                {selected.channels.includes('EMAIL') && confirm !== 'cancel'
+                                  ? `This sends a real warning email to ${recipientText.split(/[,;\n]/).filter((value) => value.trim()).length} listed recipients. Confirm only after reviewing the message and addresses.`
+                                  : 'This records an officer action. Non-email channels remain simulations.'}
                               </Text>
                               <Action
                                 title="Confirm Action"
@@ -425,7 +510,7 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                       <Text style={s.heading}>
                         {selected ? selected.reference : 'New disaster warning'} {selected?.status}
                       </Text>
-                      <View style={s.row}>
+                      <View style={[s.row, mobile && mobileStyles.row]}>
                         {['LOW', 'MEDIUM', 'HIGH'].map((level) => (
                           <Pressable
                             key={level}
@@ -433,7 +518,12 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                             accessibilityState={{ selected: form.level === level }}
                             disabled={busy || readonly}
                             onPress={() => setForm({ ...form, level })}
-                            style={[s.chip, form.level === level && { backgroundColor: '#D9EAFD' }]}
+                            style={[
+                              s.chip,
+                              form.level === level && {
+                                backgroundColor: mobile ? '#DCEFE8' : '#D9EAFD',
+                              },
+                            ]}
                           >
                             <Text style={s.body}>{level}</Text>
                           </Pressable>
@@ -465,7 +555,7 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                         </View>
                       ))}
                       <Text style={s.heading}>Delivery channels</Text>
-                      <View style={s.row}>
+                      <View style={[s.row, mobile && mobileStyles.row]}>
                         {Object.entries(channelNames).map(([channel, title]) => (
                           <Pressable
                             key={channel}
@@ -482,7 +572,9 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                             }
                             style={[
                               s.chip,
-                              form.channels.includes(channel) && { backgroundColor: '#D9EAFD' },
+                              form.channels.includes(channel) && {
+                                backgroundColor: mobile ? '#DCEFE8' : '#D9EAFD',
+                              },
                             ]}
                           >
                             <Text style={s.body}>
@@ -492,7 +584,7 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                           </Pressable>
                         ))}
                       </View>
-                      <View style={s.row}>
+                      <View style={[s.row, mobile && mobileStyles.row]}>
                         <Action
                           title="Save Draft"
                           disabled={busy || readonly}
@@ -512,7 +604,7 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                     </>
                   )}
                 </View>
-                <View style={[s.card, { flex: 2 }]}>
+                <View style={[s.card, { flex: 2 }, mobile && mobileStyles.card]}>
                   <Text style={s.heading}>Warning directory</Text>
                   {!loaded ? (
                     <Text style={s.muted}>Press Refresh Warning List to load.</Text>
@@ -520,7 +612,7 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                     <Text style={s.muted}>No saved warnings yet.</Text>
                   ) : (
                     result.items.map((item) => (
-                      <View key={item.id} style={s.record}>
+                      <View key={item.id} style={[s.record, mobile && mobileStyles.record]}>
                         <Text style={s.heading}>{item.hazard}</Text>
                         <Text style={s.muted}>
                           {item.affectedArea} · {item.level} · {item.status}
@@ -543,7 +635,7 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                     ))
                   )}
                   {loaded && (
-                    <View style={s.row}>
+                    <View style={[s.row, mobile && mobileStyles.row]}>
                       <Action
                         title="Previous"
                         disabled={busy || page === 0}
