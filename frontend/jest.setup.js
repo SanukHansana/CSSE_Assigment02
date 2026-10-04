@@ -1,7 +1,14 @@
+jest.mock('react-native-web/dist/exports/useWindowDimensions', () => ({
+  __esModule: true,
+  default: jest.fn(() => ({ width: 1280, height: 900, scale: 1, fontScale: 1 })),
+}));
 jest.mock('expo-router', () => {
   const React = require('react');
   return {
-    Link: ({ children, href, ...props }) => React.createElement('a', { ...props, href }, children),
+    Link: ({ children, href, asChild, onPress, ...props }) =>
+      asChild
+        ? React.cloneElement(children, { href })
+        : React.createElement('a', { ...props, href, onClick: onPress }, children),
     router: { replace: jest.fn(), push: jest.fn() },
     usePathname: () => '/',
     useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),

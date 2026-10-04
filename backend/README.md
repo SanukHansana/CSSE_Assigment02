@@ -134,3 +134,7 @@ The five backend stages are complete. See the [final integration and validation 
 The Citizen/Community Volunteer support board is implemented in the `community` module. It uses one versioned MongoDB document per need with embedded offers/history. See [flow and API examples](docs/community-support.md).
 
 `./mvnw clean verify` now measures the entire backend with line/branch gates, including relief, warnings, rescue, approval and community support. [Test scope and measured results](docs/test-coverage.md) supersede the earlier reporting-only coverage.
+
+## Brevo email integration
+
+Real warning emails and officer application decision notifications use the server-only Brevo API adapter. Set the API key and verified sender in the ignored backend `.env`, then restart. See [configuration, flow and status semantics](docs/brevo-email.md). Earlier warning descriptions that say all channels are simulations now apply only to SMS/push/audible channels.

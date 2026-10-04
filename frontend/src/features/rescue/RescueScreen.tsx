@@ -1,3 +1,4 @@
+import { mobileStyles, useMobileLayout } from '../../components/layout/mobileLayout';
 import { MapPicker } from '../../components/maps/MapPicker';
 import { Action } from '../../components/ui/Action';
 import { RescueOperations } from './RescueOperations';
@@ -75,6 +76,7 @@ const initial = {
 };
 
 export function RescueScreen({ session, onSignOut }: { session: Session; onSignOut: () => void }) {
+  const mobile = useMobileLayout();
   const wide = useWindowDimensions().width >= 900;
   const [tab, setTab] = useState<'incidents' | 'teams'>('incidents');
   const [selected, setSelected] = useState<Incident | Team | null>(null);
@@ -199,7 +201,7 @@ export function RescueScreen({ session, onSignOut }: { session: Session; onSignO
     ['longitude', 'Longitude', 25],
   ];
   return (
-    <SafeAreaView style={s.root}>
+    <SafeAreaView edges={mobile ? ['left', 'right'] : undefined} style={s.root}>
       <View style={[s.shell, wide && { flexDirection: 'row' }]}>
         {wide && (
           <View style={s.sidebar}>
@@ -218,16 +220,16 @@ export function RescueScreen({ session, onSignOut }: { session: Session; onSignO
         )}
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={s.content}
+          contentContainerStyle={[s.content, mobile && mobileStyles.content]}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={s.row}>
+          <View style={[s.row, mobile && mobileStyles.row]}>
             <Link href="/" style={s.link}>
               ← Home
             </Link>
             <Text style={s.muted}>{session.user.displayName}</Text>
           </View>
-          <Text accessibilityRole="header" style={s.title}>
+          <Text accessibilityRole="header" style={[s.title, mobile && mobileStyles.title]}>
             {tab === 'incidents' ? 'Rescue Incidents' : 'Rescue Teams'}
           </Text>
           <Text style={s.muted}>Record incidents and maintain team readiness.</Text>
@@ -245,7 +247,7 @@ export function RescueScreen({ session, onSignOut }: { session: Session; onSignO
                   {message}
                 </Text>
               ) : null}
-              <View style={s.row}>
+              <View style={[s.row, mobile && mobileStyles.row]}>
                 <Action
                   title="Incidents"
                   disabled={busy || tab === 'incidents'}
@@ -262,8 +264,14 @@ export function RescueScreen({ session, onSignOut }: { session: Session; onSignO
                   onPress={() => void run(() => load())}
                 />
               </View>
-              <View style={[s.columns, wide && { flexDirection: 'row' }]}>
-                <View style={[s.card, { flex: 3 }]}>
+              <View
+                style={[
+                  s.columns,
+                  mobile && mobileStyles.columns,
+                  wide && { flexDirection: 'row' },
+                ]}
+              >
+                <View style={[s.card, { flex: 3 }, mobile && mobileStyles.card]}>
                   <Text style={s.heading}>
                     {loaded
                       ? `${result.totalElements} records`
@@ -273,7 +281,7 @@ export function RescueScreen({ session, onSignOut }: { session: Session; onSignO
                     <Text style={s.muted}>No records yet. Add one with the form.</Text>
                   )}
                   {result.items.map((item) => (
-                    <View key={item.id} style={s.record}>
+                    <View key={item.id} style={[s.record, mobile && mobileStyles.record]}>
                       <Text style={s.heading}>
                         {'reference' in item ? item.reference : item.name}
                       </Text>
@@ -305,7 +313,7 @@ export function RescueScreen({ session, onSignOut }: { session: Session; onSignO
                     </View>
                   ))}
                   {loaded && (
-                    <View style={s.row}>
+                    <View style={[s.row, mobile && mobileStyles.row]}>
                       <Action
                         title="Previous"
                         disabled={busy || page === 0}
@@ -320,7 +328,7 @@ export function RescueScreen({ session, onSignOut }: { session: Session; onSignO
                     </View>
                   )}
                 </View>
-                <View style={[s.card, { flex: 2 }]}>
+                <View style={[s.card, { flex: 2 }, mobile && mobileStyles.card]}>
                   <Text style={s.heading}>
                     {selected ? 'View / Edit' : 'Create'}{' '}
                     {tab === 'incidents' ? 'incident' : 'team'}
@@ -328,7 +336,7 @@ export function RescueScreen({ session, onSignOut }: { session: Session; onSignO
                   <Text style={s.body}>
                     {tab === 'incidents' ? 'Incident type' : 'Specialization'}
                   </Text>
-                  <View style={s.row}>
+                  <View style={[s.row, mobile && mobileStyles.row]}>
                     {types.map((type) => (
                       <Pressable
                         key={type}
@@ -336,13 +344,16 @@ export function RescueScreen({ session, onSignOut }: { session: Session; onSignO
                         accessibilityState={{ selected: form.type === type }}
                         disabled={busy || readonly}
                         onPress={() => setForm({ ...form, type })}
-                        style={[s.chip, form.type === type && { backgroundColor: '#D9EAFD' }]}
+                        style={[
+                          s.chip,
+                          form.type === type && { backgroundColor: mobile ? '#DCEFE8' : '#D9EAFD' },
+                        ]}
                       >
                         <Text style={s.body}>{type.replaceAll('_', ' ')}</Text>
                       </Pressable>
                     ))}
                   </View>
-                  <View style={s.row}>
+                  <View style={[s.row, mobile && mobileStyles.row]}>
                     {(tab === 'incidents'
                       ? ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
                       : ['AVAILABLE', 'UNAVAILABLE']
@@ -360,7 +371,7 @@ export function RescueScreen({ session, onSignOut }: { session: Session; onSignO
                         style={[
                           s.chip,
                           (tab === 'incidents' ? form.priority : form.status) === value && {
-                            backgroundColor: '#D9EAFD',
+                            backgroundColor: mobile ? '#DCEFE8' : '#D9EAFD',
                           },
                         ]}
                       >

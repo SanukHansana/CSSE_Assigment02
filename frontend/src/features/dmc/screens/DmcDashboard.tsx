@@ -1,3 +1,4 @@
+import { mobileStyles, useMobileLayout } from '../../../components/layout/mobileLayout';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -7,6 +8,7 @@ import { useAuth } from '../../../application/AuthContext';
 import { request } from '../../reports/api';
 import type { Report } from '../../reports/api';
 export function DmcDashboard() {
+  const mobile = useMobileLayout();
   const { session, setSession } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -14,20 +16,25 @@ export function DmcDashboard() {
   const [error, setError] = useState('');
   const cards: ['/relief' | '/warnings' | '/rescue', string, string][] = [
     ['/relief', 'Relief resources & shelters', 'Allocate supplies and manage shelter capacity.'],
-    ['/warnings', 'Disaster warnings', 'Compose warnings and track simulated delivery.'],
+    ['/warnings', 'Disaster warnings', 'Compose warnings, send emails and track channel status.'],
     ['/rescue', 'Rescue operations', 'Assign teams and coordinate incident progress.'],
   ];
   return (
     <Screen>
       <Text style={s.eyebrow}>OPERATIONS WORKSPACE</Text>
-      <Text style={s.title}>Welcome, {session?.user.displayName}</Text>
+      <Text style={[s.title, mobile && mobileStyles.title]}>
+        Welcome, {session?.user.displayName}
+      </Text>
       <Text style={s.body}>
         Coordinate your response from one workspace. Your DMC Officer account has access to the
         modules below.
       </Text>
-      <View style={s.grid}>
+      <View style={[s.grid, mobile && { flexDirection: 'column' }]}>
         {cards.map(([href, title, body]) => (
-          <View key={href} style={s.card}>
+          <View
+            key={href}
+            style={[s.card, mobile && mobileStyles.card, mobile && { minWidth: 0, width: '100%' }]}
+          >
             <Text style={s.heading}>{title}</Text>
             <Text style={s.body}>{body}</Text>
             <Link href={href} style={s.link}>
@@ -36,7 +43,7 @@ export function DmcDashboard() {
           </View>
         ))}
       </View>
-      <View style={s.card}>
+      <View style={[s.card, mobile && mobileStyles.card, mobile && { minWidth: 0, width: '100%' }]}>
         <Text style={s.heading}>Verified ground evidence</Text>
         <Text style={s.body}>
           Use verified reports as supporting information. Duty Officers handle verification; DMC

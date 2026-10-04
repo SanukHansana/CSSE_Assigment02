@@ -1,3 +1,4 @@
+import { mobileStyles, useMobileLayout } from '../../components/layout/mobileLayout';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -36,6 +37,7 @@ interface Page {
 }
 const initial = { item: '', category: 'WATER', quantity: '', unit: '', description: '', area: '' };
 export function CommunityScreen() {
+  const mobile = useMobileLayout();
   const { session, setSession } = useAuth();
   const citizen = session?.user.roles.includes('CITIZEN') || false;
   const volunteer = session?.user.roles.includes('COMMUNITY_VOLUNTEER') || false;
@@ -140,10 +142,13 @@ export function CommunityScreen() {
     ['area', 'Area / district', 200],
   ];
   return (
-    <SafeAreaView style={s.root}>
-      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+    <SafeAreaView edges={mobile ? ['left', 'right'] : undefined} style={s.root}>
+      <ScrollView
+        contentContainerStyle={[s.content, mobile && mobileStyles.content]}
+        keyboardShouldPersistTaps="handled"
+      >
         <Text style={s.eyebrow}>COMMUNITY / PERSONAL RESOURCE SUPPORT</Text>
-        <Text accessibilityRole="header" style={s.title}>
+        <Text accessibilityRole="header" style={[s.title, mobile && mobileStyles.title]}>
           {volunteer ? 'Help your community' : 'My support needs'}
         </Text>
         <Text style={s.body}>
@@ -151,7 +156,7 @@ export function CommunityScreen() {
           official DMC inventory is separate.
         </Text>
         {!session ? (
-          <View style={s.card}>
+          <View style={[s.card, mobile && mobileStyles.card]}>
             <Text style={s.heading}>Sign in to request or offer support</Text>
             <Link href="/login" style={s.link}>
               Sign in →
@@ -173,7 +178,7 @@ export function CommunityScreen() {
                 {message}
               </Text>
             ) : null}
-            <View style={s.row}>
+            <View style={[s.row, mobile && mobileStyles.row]}>
               {citizen && (
                 <Action
                   title="My Needs"
@@ -218,7 +223,7 @@ export function CommunityScreen() {
               />
             </View>
             {citizen && view === 'mine' && !selected && (
-              <View style={s.card}>
+              <View style={[s.card, mobile && mobileStyles.card]}>
                 <Text style={s.heading}>Post a need</Text>
                 {fields.map(([key, title, max]) => (
                   <View key={key} style={{ gap: 8 }}>
@@ -231,7 +236,7 @@ export function CommunityScreen() {
                       maxLength={max}
                       keyboardType={key === 'quantity' ? 'number-pad' : 'default'}
                       multiline={key === 'description'}
-                      style={s.input}
+                      style={[s.input, mobile && mobileStyles.input]}
                     />
                   </View>
                 ))}
@@ -239,8 +244,8 @@ export function CommunityScreen() {
               </View>
             )}
             {selected ? (
-              <View style={s.card}>
-                <View style={s.row}>
+              <View style={[s.card, mobile && mobileStyles.card]}>
+                <View style={[s.row, mobile && mobileStyles.row]}>
                   <Text style={s.heading}>{selected.item}</Text>
                   <Text style={s.badge}>{selected.status}</Text>
                 </View>
@@ -253,7 +258,7 @@ export function CommunityScreen() {
                   {selected.unit} · Received: {selected.received} · Uncommitted:{' '}
                   {selected.remainingToCommit}
                 </Text>
-                <View style={s.row}>
+                <View style={[s.row, mobile && mobileStyles.row]}>
                   <Action
                     title="Back to Needs"
                     secondary
@@ -301,7 +306,7 @@ export function CommunityScreen() {
                         onChangeText={setQuantity}
                         editable={!busy}
                         keyboardType="number-pad"
-                        style={s.input}
+                        style={[s.input, mobile && mobileStyles.input]}
                       />
                       <TextInput
                         accessibilityLabel="Personal resource offer note"
@@ -311,7 +316,7 @@ export function CommunityScreen() {
                         editable={!busy}
                         maxLength={500}
                         multiline
-                        style={s.input}
+                        style={[s.input, mobile && mobileStyles.input]}
                       />
                       <Action
                         title="Offer Personal Resources"
@@ -330,7 +335,7 @@ export function CommunityScreen() {
                     </Text>
                     <Text style={s.body}>{offer.note}</Text>
                     <Text style={s.badge}>{offer.status}</Text>
-                    <View style={s.row}>
+                    <View style={[s.row, mobile && mobileStyles.row]}>
                       {selected.mine &&
                         offer.status === 'OFFERED' &&
                         selected.status === 'OPEN' && (
@@ -389,7 +394,7 @@ export function CommunityScreen() {
                 )}
               </View>
             ) : (
-              <View style={s.card}>
+              <View style={[s.card, mobile && mobileStyles.card]}>
                 <Text style={s.heading}>Needs board</Text>
                 {!loaded ? (
                   <Text style={s.body}>Refresh to load requests.</Text>
@@ -425,7 +430,7 @@ export function CommunityScreen() {
                   ))
                 )}
                 {loaded && list.totalPages > 1 && (
-                  <View style={s.row}>
+                  <View style={[s.row, mobile && mobileStyles.row]}>
                     <Action
                       title="Previous"
                       secondary

@@ -1,5 +1,7 @@
+import { useState } from 'react';
+import { mobileStyles, useMobileLayout } from '../../../components/layout/mobileLayout';
 import { Link } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const planned = [
@@ -21,17 +23,23 @@ const planned = [
 ];
 
 export function HomeScreen() {
+  const mobile = useMobileLayout();
+  const [showFlow, setShowFlow] = useState(false);
   const wide = useWindowDimensions().width >= 850;
   return (
-    <SafeAreaView style={styles.root}>
+    <SafeAreaView edges={mobile ? ['left', 'right'] : undefined} style={styles.root}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.content}>
-          <View style={[styles.hero, wide && styles.heroWide]}>
-            <View style={styles.heroCopy}>
+        <View style={[styles.content, mobile && mobileStyles.content]}>
+          <View style={[styles.hero, mobile && mobileStyles.card, wide && styles.heroWide]}>
+            <View style={[styles.heroCopy, mobile && { flex: 0 }]}>
               <Text style={styles.eyebrow}>DISASTER MANAGEMENT CENTRE</Text>
               <Text
                 accessibilityRole="header"
-                style={[styles.heroTitle, wide && styles.heroTitleWide]}
+                style={[
+                  styles.heroTitle,
+                  mobile && { fontSize: 29, lineHeight: 37 },
+                  wide && styles.heroTitleWide,
+                ]}
               >
                 Better information.{'\n'}Faster coordination.
               </Text>
@@ -43,32 +51,56 @@ export function HomeScreen() {
                 Open ground reports →
               </Link>
             </View>
-            <View style={styles.heroPanel}>
-              <Text style={styles.panelLabel}>GROUND REPORTING</Text>
-              <Text style={styles.panelTitle}>From observation{'\n'}to verified evidence</Text>
-              {[
-                'Describe the hazard',
-                'Attach a photo and location',
-                'Duty Officer reviews the evidence',
-              ].map((step, index) => (
-                <View key={step} style={styles.flowRow}>
-                  <Text style={styles.stepNumber}>{index + 1}</Text>
-                  <Text style={styles.flowText}>{step}</Text>
-                </View>
-              ))}
-              <Text style={styles.panelNote}>
-                Reports support official assessment after verification.
-              </Text>
-            </View>
+            {mobile && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ expanded: showFlow }}
+                onPress={() => setShowFlow(!showFlow)}
+                style={({ pressed }) => [styles.mobileDisclosure, pressed && { opacity: 0.75 }]}
+              >
+                <Text style={styles.mobileDisclosureText}>
+                  {showFlow ? 'Hide reporting flow −' : 'How reporting works +'}
+                </Text>
+              </Pressable>
+            )}
+            {(!mobile || showFlow) && (
+              <View style={[styles.heroPanel, mobile && mobileStyles.card]}>
+                <Text style={styles.panelLabel}>GROUND REPORTING</Text>
+                <Text style={styles.panelTitle}>From observation{'\n'}to verified evidence</Text>
+                {[
+                  'Describe the hazard',
+                  'Attach a photo and location',
+                  'Duty Officer reviews the evidence',
+                ].map((step, index) => (
+                  <View key={step} style={styles.flowRow}>
+                    <Text style={styles.stepNumber}>{index + 1}</Text>
+                    <Text style={styles.flowText}>{step}</Text>
+                  </View>
+                ))}
+                <Text style={styles.panelNote}>
+                  Reports support official assessment after verification.
+                </Text>
+              </View>
+            )}
           </View>
           <View style={styles.sectionHeading}>
-            <Text accessibilityRole="header" style={styles.sectionTitle}>
+            <Text
+              accessibilityRole="header"
+              style={[styles.sectionTitle, mobile && { fontSize: 23 }]}
+            >
               Your workspace
             </Text>
             <Text style={styles.sectionSubtitle}>One place to report and coordinate.</Text>
           </View>
           <View style={styles.grid}>
-            <View style={[styles.feature, styles.activeFeature, wide && styles.half]}>
+            <View
+              style={[
+                styles.feature,
+                mobile && mobileStyles.card,
+                styles.activeFeature,
+                wide && styles.half,
+              ]}
+            >
               <View style={styles.cardTop}>
                 <Text style={styles.cardNumber}>01</Text>
                 <Text style={styles.badge}>AVAILABLE</Text>
@@ -83,7 +115,10 @@ export function HomeScreen() {
               </Link>
             </View>
             {planned.map((feature) => (
-              <View key={feature.number} style={[styles.feature, wide && styles.half]}>
+              <View
+                key={feature.number}
+                style={[styles.feature, mobile && mobileStyles.card, wide && styles.half]}
+              >
                 <View style={styles.cardTop}>
                   <Text style={styles.cardNumber}>{feature.number}</Text>
                   <Text style={styles.plannedBadge}>AVAILABLE</Text>
@@ -106,7 +141,7 @@ export function HomeScreen() {
               </View>
             ))}
           </View>
-          <View style={[styles.feature, styles.activeFeature]}>
+          <View style={[styles.feature, mobile && mobileStyles.card, styles.activeFeature]}>
             <Text style={styles.cardTitle}>Community support</Text>
             <Text style={styles.cardBody}>
               Citizens can request essential supplies, and community volunteers can offer their
@@ -131,6 +166,8 @@ export function HomeScreen() {
   );
 }
 const styles = StyleSheet.create({
+  mobileDisclosure: { backgroundColor: '#DDECEB', borderRadius: 12, padding: 15, minHeight: 48 },
+  mobileDisclosureText: { color: '#126B63', fontWeight: '700', fontSize: 14 },
   root: { flex: 1, backgroundColor: '#F3F6F8' },
   scroll: { flexGrow: 1 },
   header: {

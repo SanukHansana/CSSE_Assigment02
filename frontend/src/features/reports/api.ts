@@ -10,6 +10,7 @@ export interface Account {
   requestedRole?: string;
   approvalStatus?: string;
   approvalNote?: string;
+  emailNotificationStatus?: string;
 }
 export interface Session {
   accessToken: string;

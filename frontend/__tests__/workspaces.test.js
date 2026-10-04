@@ -301,7 +301,6 @@ test('warning saves validated draft and shows preview before simulated broadcast
 test('issued warning cancellation requires reason', async () => {
   mount(WarningScreen);
   await edit({ ...warning, status: 'ISSUED' }, 'Refresh Warning List');
-  request.mockResolvedValueOnce({ ...warning, status: 'ISSUED' });
   click('Review Preview');
   await screen.findByRole('button', { name: 'Cancel Warning' });
   click('Cancel Warning');
@@ -452,4 +451,76 @@ test('rescue incident type and priority choices are included in save payload', a
     type: 'MEDICAL_RESCUE',
     priority: 'CRITICAL',
   });
+});
+
+test('Brevo warning preview validates recipients and confirms real email with explicit status', async () => {
+  mount(WarningScreen);
+  await edit({ ...warning, channels: ['EMAIL'] }, 'Refresh Warning List');
+  request.mockResolvedValueOnce({ ...warning, channels: ['EMAIL'] });
+  click('Review Preview');
+  await screen.findByRole('button', { name: 'Broadcast Warning Email' });
+  click('Broadcast Warning Email');
+  click('Confirm Action');
+  await screen.findByText(/Enter 1–50 valid recipient/);
+  fill('Warning email recipients', 'a@example.test, b@example.test');
+  const acknowledged = {
+    ...warning,
+    channels: ['EMAIL'],
+    status: 'ISSUED',
+    version: 2,
+    emailDispatch: {
+      requestId: 'email',
+      recipients: ['a@example.test', 'b@example.test'],
+      status: 'ACCEPTED',
+      providerMessageId: 'provider-1',
+      message: 'Accepted, not delivered',
+    },
+    deliveries: [
+      { channel: 'EMAIL', status: 'ACCEPTED', attempts: 1, lastAttemptAt: resource.updatedAt },
+    ],
+  };
+  request.mockResolvedValueOnce(acknowledged);
+  click('Confirm Action');
+  await screen.findByText('Email status: ACCEPTED. Accepted, not delivered');
+  expect(request.mock.calls.at(-1)[0]).toBe('/api/dmc/warnings/w/email');
+  expect(request.mock.calls.at(-1)[3]).toMatchObject({
+    expectedVersion: 0,
+    recipients: ['a@example.test', 'b@example.test'],
+  });
+  expect(screen.getByLabelText('Warning email recipients').readOnly).toBe(true);
+});
+test('known failed email retries saved recipients and displays uncertain outcome', async () => {
+  mount(WarningScreen);
+  const failed = {
+    ...warning,
+    channels: ['EMAIL'],
+    status: 'ISSUED',
+    version: 2,
+    emailDispatch: {
+      requestId: 'previous',
+      recipients: ['a@example.test'],
+      status: 'FAILED',
+      providerMessageId: null,
+      message: 'Rejected',
+    },
+    deliveries: [
+      { channel: 'EMAIL', status: 'FAILED', attempts: 1, lastAttemptAt: resource.updatedAt },
+    ],
+  };
+  await edit(failed, 'Refresh Warning List');
+  click('Review Preview');
+  await screen.findByRole('button', { name: 'Retry Failed Email' });
+  click('Retry Failed Email');
+  request.mockResolvedValueOnce({
+    ...failed,
+    version: 4,
+    emailDispatch: { ...failed.emailDispatch, status: 'UNKNOWN', message: 'Check Brevo logs' },
+    deliveries: [
+      { channel: 'EMAIL', status: 'UNKNOWN', attempts: 2, lastAttemptAt: resource.updatedAt },
+    ],
+  });
+  click('Confirm Action');
+  await screen.findByText('Email status: UNKNOWN. Check Brevo logs');
+  expect(request.mock.calls.at(-1)[3].recipients).toEqual(['a@example.test']);
+  expect(screen.getByRole('button', { name: 'Retry Failed Email' }).disabled).toBe(true);
 });

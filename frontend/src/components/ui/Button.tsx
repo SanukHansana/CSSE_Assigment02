@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, useWindowDimensions } from 'react-native';
 
 import { theme } from '../../theme/theme';
 
@@ -10,13 +10,18 @@ interface ButtonProps {
 
 /** Presentational component: no feature logic or API dependencies. */
 export function Button({ label, onPress, loading = false }: ButtonProps) {
+  const mobile = useWindowDimensions().width < 700;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled: loading, busy: loading }}
       disabled={loading}
       onPress={onPress}
-      style={({ pressed }) => [styles.button, (pressed || loading) && styles.dimmed]}
+      style={({ pressed }) => [
+        styles.button,
+        mobile && { backgroundColor: '#173F5F', minHeight: 50 },
+        (pressed || loading) && styles.dimmed,
+      ]}
     >
       {loading ? (
         <ActivityIndicator color={theme.colors.surface} />

@@ -1,3 +1,4 @@
+import { mobileStyles, useMobileLayout } from '../../components/layout/mobileLayout';
 import { Action } from '../../components/ui/Action';
 import { Link } from 'expo-router';
 import { useState } from 'react';
@@ -71,6 +72,7 @@ const initial = {
 };
 
 export function ReliefScreen({ session, onSignOut }: { session: Session; onSignOut: () => void }) {
+  const mobile = useMobileLayout();
   const wide = useWindowDimensions().width >= 900;
   const [tab, setTab] = useState<'resources' | 'shelters'>('resources');
   const [result, setResult] = useState<Page>({ items: [], totalPages: 0, totalElements: 0 });
@@ -241,7 +243,7 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
           ['occupancy', 'Current occupancy', true],
         ];
   return (
-    <SafeAreaView style={s.root}>
+    <SafeAreaView edges={mobile ? ['left', 'right'] : undefined} style={s.root}>
       <View style={[s.shell, wide && { flexDirection: 'row' }]}>
         {wide && (
           <View style={s.sidebar}>
@@ -260,16 +262,16 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
         )}
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={s.content}
+          contentContainerStyle={[s.content, mobile && mobileStyles.content]}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={s.row}>
+          <View style={[s.row, mobile && mobileStyles.row]}>
             <Link href="/" style={s.link}>
               ← Home
             </Link>
             <Text style={s.muted}>{session.user.displayName}</Text>
           </View>
-          <Text accessibilityRole="header" style={s.title}>
+          <Text accessibilityRole="header" style={[s.title, mobile && mobileStyles.title]}>
             Relief Resources & Shelters
           </Text>
           <Text style={s.muted}>Manage available supplies and shelter capacity.</Text>
@@ -289,7 +291,7 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
                   {message}
                 </Text>
               ) : null}
-              <View style={s.row}>
+              <View style={[s.row, mobile && mobileStyles.row]}>
                 <Action
                   title="Resources"
                   disabled={busy || tab === 'resources'}
@@ -306,8 +308,14 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
                   onPress={() => void run(() => load(0))}
                 />
               </View>
-              <View style={[s.columns, wide && { flexDirection: 'row' }]}>
-                <View style={[s.card, { flex: 3 }]}>
+              <View
+                style={[
+                  s.columns,
+                  mobile && mobileStyles.columns,
+                  wide && { flexDirection: 'row' },
+                ]}
+              >
+                <View style={[s.card, { flex: 3 }, mobile && mobileStyles.card]}>
                   <Text style={s.heading}>
                     {tab === 'resources' ? 'Available resources' : 'Shelter directory'}
                   </Text>
@@ -320,7 +328,7 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
                     <Text style={s.muted}>No records yet. Add one using the form.</Text>
                   )}
                   {result.items.map((item) => (
-                    <View key={item.id} style={s.record}>
+                    <View key={item.id} style={[s.record, mobile && mobileStyles.record]}>
                       <Text style={s.heading}>{item.name}</Text>
                       <Text style={s.muted}>{item.location}</Text>
                       {'availableQuantity' in item ? (
@@ -356,7 +364,7 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
                     </View>
                   ))}
                   {loaded && (
-                    <View style={s.row}>
+                    <View style={[s.row, mobile && mobileStyles.row]}>
                       <Action
                         title="Previous"
                         disabled={busy || page === 0}
@@ -371,7 +379,7 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
                     </View>
                   )}
                 </View>
-                <View style={[s.card, { flex: 2 }]}>
+                <View style={[s.card, { flex: 2 }, mobile && mobileStyles.card]}>
                   <Text style={s.heading}>
                     {selected ? 'Edit' : 'Add'} {tab === 'resources' ? 'resource' : 'shelter'}
                   </Text>
@@ -395,12 +403,12 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
                                   ? 30
                                   : 100
                         }
-                        style={s.input}
+                        style={[s.input, mobile && mobileStyles.input]}
                       />
                     </View>
                   ))}
                   {tab === 'shelters' && (
-                    <View style={s.row}>
+                    <View style={[s.row, mobile && mobileStyles.row]}>
                       {['OPEN', 'FULL', 'CLOSED'].map((value) => (
                         <Pressable
                           key={value}
@@ -408,7 +416,12 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
                           accessibilityState={{ selected: form.status === value }}
                           disabled={busy}
                           onPress={() => setForm({ ...form, status: value })}
-                          style={[s.chip, form.status === value && { backgroundColor: '#D9EAFD' }]}
+                          style={[
+                            s.chip,
+                            form.status === value && {
+                              backgroundColor: mobile ? '#DCEFE8' : '#D9EAFD',
+                            },
+                          ]}
                         >
                           <Text style={s.body}>{value}</Text>
                         </Pressable>
@@ -468,7 +481,9 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
                               onPress={() => setShelterId(item.id)}
                               style={[
                                 s.chip,
-                                shelterId === item.id && { backgroundColor: '#D9EAFD' },
+                                shelterId === item.id && {
+                                  backgroundColor: mobile ? '#DCEFE8' : '#D9EAFD',
+                                },
                               ]}
                             >
                               <Text style={s.body}>
@@ -477,7 +492,7 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
                             </Pressable>
                           ))}
                           {destinationPages > 1 && (
-                            <View style={s.row}>
+                            <View style={[s.row, mobile && mobileStyles.row]}>
                               <Action
                                 title="Previous shelters"
                                 disabled={busy || destinationPage === 0}
@@ -501,7 +516,7 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
                             value={quantity}
                             onChangeText={setQuantity}
                             keyboardType="number-pad"
-                            style={s.input}
+                            style={[s.input, mobile && mobileStyles.input]}
                           />
                         </>
                       ) : (
@@ -516,7 +531,7 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
                             value={change}
                             onChangeText={setChange}
                             keyboardType="numbers-and-punctuation"
-                            style={s.input}
+                            style={[s.input, mobile && mobileStyles.input]}
                           />
                         </>
                       )}
@@ -527,7 +542,7 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
                         value={note}
                         onChangeText={setNote}
                         maxLength={500}
-                        style={s.input}
+                        style={[s.input, mobile && mobileStyles.input]}
                       />
                       <Action
                         title={tab === 'resources' ? 'Confirm Allocation' : 'Save Occupancy Change'}
