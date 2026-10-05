@@ -1,5 +1,7 @@
 # Ground hazard reports: Stage 1 domain and proposed API
 
+**Current implementation:** [Stage 2 endpoints and evidence storage](ground-hazard-report-stage2.md) now exist and reuse custom JWT authentication. The notes below preserve the original Stage 1 design and proposed later-stage contract; statements about missing reporting endpoints describe that earlier stage.
+
 ## Scope and reference decisions
 
 Stage 1 adds domain models, persistence mapping, a save validation callback, a repository, a versioned MongoDB migration, and tests. **None of the reporting endpoints below exist yet.** `/api/dmc` retains its existing availability response. No frontend, authentication, warnings, risk scoring, assessment module, or offline retry scheduler is added.
