@@ -1,0 +1,5 @@
+# Copy this file to application-local.properties and replace the URI.
+# The copied file is ignored by Git. Never commit real credentials.
+# For Atlas, copy the Java driver URI from Atlas and include /dmc before ?.
+spring.mongodb.uri=mongodb://localhost:27017/dmc
+# spring.mongodb.uri=mongodb+srv://USERNAME:PASSWORD@YOUR_CLUSTER.mongodb.net/dmc?retryWrites=true&w=majority
