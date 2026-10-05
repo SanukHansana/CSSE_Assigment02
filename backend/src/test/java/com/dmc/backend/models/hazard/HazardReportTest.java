@@ -1,5 +1,10 @@
 package com.dmc.backend.models.hazard;
 
+import com.dmc.backend.models.hazard.HazardReport.UserReference;
+import com.dmc.backend.models.hazard.HazardReport.ReporterIdentity;
+import com.dmc.backend.models.hazard.HazardReport.ReportedLocation;
+import com.dmc.backend.models.hazard.HazardReport.PhotoEvidence;
+import com.dmc.backend.models.hazard.HazardReport.ReportHistoryEvent;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 

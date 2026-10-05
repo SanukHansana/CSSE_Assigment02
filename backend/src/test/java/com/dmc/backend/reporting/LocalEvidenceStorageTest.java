@@ -1,5 +1,7 @@
 package com.dmc.backend.reporting;
 
+import com.dmc.backend.models.hazard.HazardReport.UserReference;
+import com.dmc.backend.models.hazard.HazardReport.PhotoEvidence;
 import static com.dmc.backend.reporting.ReportFixtures.*;
 import static org.assertj.core.api.Assertions.*;
 

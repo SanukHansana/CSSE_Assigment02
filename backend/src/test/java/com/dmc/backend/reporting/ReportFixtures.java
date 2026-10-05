@@ -1,5 +1,9 @@
 package com.dmc.backend.reporting;
 
+import com.dmc.backend.models.hazard.HazardReport.UserReference;
+import com.dmc.backend.models.hazard.HazardReport.ReporterIdentity;
+import com.dmc.backend.models.hazard.HazardReport.ReportedLocation;
+import com.dmc.backend.models.hazard.HazardReport.PhotoEvidence;
 import com.dmc.backend.auth.*;
 import com.dmc.backend.models.hazard.*;
 import java.time.*;

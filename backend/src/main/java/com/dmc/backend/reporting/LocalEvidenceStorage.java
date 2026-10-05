@@ -2,8 +2,8 @@ package com.dmc.backend.reporting;
 
 import static org.springframework.http.HttpStatus.*;
 
-import com.dmc.backend.models.hazard.PhotoEvidence;
-import com.dmc.backend.models.hazard.UserReference;
+import com.dmc.backend.models.hazard.HazardReport.PhotoEvidence;
+import com.dmc.backend.models.hazard.HazardReport.UserReference;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.ByteBuffer;

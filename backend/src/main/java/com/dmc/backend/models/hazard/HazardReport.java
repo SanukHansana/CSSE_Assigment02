@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -66,10 +67,10 @@ public class HazardReport {
         HazardReport report = new HazardReport();
         report.reporter = Objects.requireNonNull(reporter, "reporter");
         report.source = Objects.requireNonNull(source, "source");
-        report.createdAt = ModelChecks.timestamp(clock.instant(), "createdAt");
+        report.createdAt = HazardReport.timestamp(clock.instant(), "createdAt");
         report.updatedAt = report.createdAt;
         report.clientCapturedAt = clientCapturedAt == null ? null
-                : ModelChecks.timestamp(clientCapturedAt, "clientCapturedAt");
+                : HazardReport.timestamp(clientCapturedAt, "clientCapturedAt");
         report.id = UUID.randomUUID().toString();
         report.reference = reference("HR", report.createdAt);
         report.status = ReportStatus.DRAFT;
@@ -81,7 +82,7 @@ public class HazardReport {
     public void updateDraft(HazardType hazardType, String description,
                             ReportedLocation location, Clock clock) {
         requireState(ReportStatus.DRAFT);
-        ModelChecks.description(description);
+        HazardReport.description(description);
         Instant now = now(clock);
         this.hazardType = hazardType;
         this.description = description;
@@ -158,8 +159,8 @@ public class HazardReport {
 
     private void requireSubmissionFields() {
         Objects.requireNonNull(hazardType, "hazardType is required for submission");
-        ModelChecks.nonblank(description, "description");
-        ModelChecks.description(description);
+        HazardReport.nonblank(description, "description");
+        HazardReport.description(description);
         Objects.requireNonNull(location, "location is required for submission");
         Objects.requireNonNull(photo, "photo is required for submission");
     }
@@ -179,7 +180,7 @@ public class HazardReport {
     }
 
     private Instant now(Clock clock) {
-        Instant now = ModelChecks.timestamp(clock.instant(), "server time");
+        Instant now = HazardReport.timestamp(clock.instant(), "server time");
         if (now.isBefore(updatedAt)) {
             throw new IllegalArgumentException("server event time cannot precede the previous event");
         }
@@ -300,4 +301,103 @@ public class HazardReport {
     public ReportReview getReview() { return review; }
     public ReportVerification getVerification() { return verification; }
     public List<ReportHistoryEvent> getHistory() { return List.copyOf(history); }
+
+    // Small report values live beside the aggregate; their persisted fields stay unchanged.
+    /**
+     * Opaque reference plus display-name snapshot, to be populated from trusted authentication.
+     * This is not a user account, authentication module, or caller-supplied authorization claim.
+     */
+    public record UserReference(@NotBlank String subjectId, @NotBlank String displayName) {
+        public UserReference {
+            HazardReport.nonblank(subjectId, "subjectId");
+            HazardReport.nonblank(displayName, "displayName");
+        }
+    }
+
+    /** Reporter type is resolved from the authenticated account by a future application service. */
+    public record ReporterIdentity(@Valid @NotNull UserReference user, @NotNull ReporterType type) {
+        public ReporterIdentity {
+            Objects.requireNonNull(user, "user");
+            Objects.requireNonNull(type, "type");
+        }
+    }
+
+    /** WGS84 coordinates. Capture time is client-originated and separate from server receipt. */
+    public record ReportedLocation(double latitude, double longitude, String areaLabel, Instant capturedAt) {
+        public ReportedLocation {
+            if (!Double.isFinite(latitude) || latitude < -90 || latitude > 90) {
+                throw new IllegalArgumentException("latitude must be finite and between -90 and 90");
+            }
+            if (!Double.isFinite(longitude) || longitude < -180 || longitude > 180) {
+                throw new IllegalArgumentException("longitude must be finite and between -180 and 180");
+            }
+            if (capturedAt != null) {
+                capturedAt = HazardReport.timestamp(capturedAt, "capturedAt");
+            }
+        }
+    }
+
+    /**
+     * Metadata only. storageKey is private and never a public download URL.
+     * Upload services must validate real image bytes and durability before creating this value.
+     */
+    public record PhotoEvidence(
+            String id, String storageKey, String originalFilename, String contentType,
+            long sizeBytes, String sha256, @Valid @NotNull UserReference uploadedBy,
+            Instant uploadedAt, Instant capturedAt) {
+        public PhotoEvidence {
+            HazardReport.nonblank(id, "evidence id");
+            HazardReport.nonblank(storageKey, "storageKey");
+            HazardReport.nonblank(originalFilename, "originalFilename");
+            if (originalFilename.contains("/") || originalFilename.contains("\\")
+                    || originalFilename.codePoints().anyMatch(Character::isISOControl)) {
+                throw new IllegalArgumentException("originalFilename must be a plain filename");
+            }
+            HazardReport.nonblank(contentType, "contentType");
+            if (!contentType.startsWith("image/")) {
+                throw new IllegalArgumentException("contentType must identify an image");
+            }
+            if (sizeBytes <= 0) {
+                throw new IllegalArgumentException("sizeBytes must be positive");
+            }
+            if (sha256 == null || !sha256.matches("[a-f0-9]{64}")) {
+                throw new IllegalArgumentException("sha256 must be a lowercase SHA-256 digest");
+            }
+            Objects.requireNonNull(uploadedBy, "uploadedBy");
+            uploadedAt = HazardReport.timestamp(uploadedAt, "uploadedAt");
+            if (capturedAt != null) {
+                capturedAt = HazardReport.timestamp(capturedAt, "capturedAt");
+            }
+        }
+    }
+
+    /** Server event time only. Previous state is null for the initial draft creation event. */
+    public record ReportHistoryEvent(String id, @NotNull HistoryEventType type,
+            ReportStatus previousStatus, @NotNull ReportStatus status,
+            @Valid @NotNull UserReference actor, Instant occurredAt) {
+        public ReportHistoryEvent {
+            HazardReport.nonblank(id, "history id");
+            Objects.requireNonNull(type, "type");
+            Objects.requireNonNull(status, "status");
+            Objects.requireNonNull(actor, "actor");
+            occurredAt = HazardReport.timestamp(occurredAt, "occurredAt");
+        }
+    }
+
+    static String nonblank(String value, String field) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(field + " must not be blank");
+        }
+        return value;
+    }
+
+    static Instant timestamp(Instant value, String field) {
+        return Objects.requireNonNull(value, field).truncatedTo(ChronoUnit.MILLIS);
+    }
+
+    static void description(String value) {
+        if (value != null && value.length() > 500) {
+            throw new IllegalArgumentException("description must contain at most 500 characters");
+        }
+    }
 }
