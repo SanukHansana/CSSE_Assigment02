@@ -11,5 +11,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 public interface HazardReportRepository extends MongoRepository<HazardReport, String> {
     Optional<HazardReport> findByIdAndReporterUserSubjectId(String id, String subjectId);
     Page<HazardReport> findByReporterUserSubjectId(String subjectId, Pageable pageable);
+    Page<HazardReport> findByReporterUserSubjectIdAndStatus(String subjectId, ReportStatus status, Pageable pageable);
     Page<HazardReport> findByStatus(ReportStatus status, Pageable pageable);
 }

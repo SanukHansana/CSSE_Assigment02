@@ -83,7 +83,7 @@ backend/
 
 Java folders beneath `src/main/java` are called packages. Keep new classes under `com.dmc.backend` so Spring can discover them automatically. `package-info.java` documents packages that are ready for future code.
 
-Spring controllers define routes through `@GetMapping`, `@PostMapping`, and similar annotations. The `routes` package holds shared paths; no separate route registration file is required. Spring middleware usually means servlet filters or MVC interceptors. A typical feature flows through **controller → service → repository → MongoDB**, with a class annotated `@Document` in `models` and an interface extending `MongoRepository<Model, String>` in `repository`. No domain models or CRUD endpoints are included yet.
+Spring controllers define routes through `@GetMapping`, `@PostMapping`, and similar annotations. The `routes` package holds shared paths; no separate route registration file is required. Spring middleware usually means servlet filters or MVC interceptors. A typical feature flows through **controller → service → repository → MongoDB**, with a class annotated `@Document` in `models` and an interface extending `MongoRepository<Model, String>` in `repository`. Ground hazard report models and reporter draft/submission endpoints are implemented; see the Stage 2 guide below.
 
 ## Test and build
 
@@ -105,4 +105,8 @@ The backend now includes the ground hazard report domain model and MongoDB persi
 
 ## Custom JWT authentication
 
-The separately authorized custom authentication prerequisite adds registration, login, and authenticated account retrieval. See [setup and API documentation](docs/custom-authentication.md). Start from `backend` so its ignored `.env` is loaded. Ground-reporting Stage 2 has not been implemented yet.
+The separately authorized custom authentication prerequisite adds registration, login, and authenticated account retrieval. See [setup and API documentation](docs/custom-authentication.md). Start from `backend` so its ignored `.env` is loaded. Ground-reporting Stage 2 now reuses this authentication module.
+
+## Ground hazard reporting — Stage 2
+
+Reporter-owned draft creation/editing, photo upload/view/download, report listing/details, and validated submission are implemented. Citizen and Community Volunteer roles are supported. Read the [Stage 2 API and storage guide](docs/ground-hazard-report-stage2.md) for endpoints, version headers, private evidence storage, and error responses. Frontend work, officer review endpoints, and offline synchronization remain later stages.

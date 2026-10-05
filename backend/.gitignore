@@ -41,3 +41,6 @@ build/
 
 # Named private environment files (e.g. Atlas credentials)
 *.env
+
+# Private photo evidence (back up separately; never commit citizen photos)
+/.data/
