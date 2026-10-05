@@ -65,4 +65,19 @@ class Stage4HttpTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.verification.decision").value("VERIFIED"))
                 .andExpect(jsonPath("$.photo.storageKey").doesNotExist()).andExpect(jsonPath("$.relatedAssessmentReference").doesNotExist());
     }
+    @Test void verifiedListAndPhotoRoutesUseProtectedAssessmentProjection() throws Exception {
+        when(users.findById("user")).thenReturn(Optional.of(account("user",AccountRole.DMC_OFFICER)));
+        var verified=complete();verified.submit(CLOCK);var officer=new UserReference("officer","Officer");verified.startReview(officer,CLOCK);
+        verified.updateReview(officer,new CredibilityChecklist(true,true,true,true),"Credible",CLOCK);verified.decide(officer,VerificationDecision.VERIFIED,null,CLOCK);
+        when(evidence.list("user",null,0,20)).thenReturn(List.of(ReportContracts.ReportResponse.fromForAssessment(verified)));
+        mvc.perform(get("/api/dmc/ground-reports/verified-evidence").header("Authorization",bearer))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].status").value("VERIFIED"));
+        when(evidence.photo("user",verified.getId())).thenReturn(new GroundReportService.PhotoContent(verified.getPhoto(),new byte[]{1,2,3}));
+        String path="/api/dmc/ground-reports/"+verified.getId()+"/assessment/photo";
+        mvc.perform(get(path).header("Authorization",bearer)).andExpect(status().isOk())
+                .andExpect(content().contentType("image/png")).andExpect(header().string("Cache-Control","no-store"));
+        mvc.perform(get(path+"/download").header("Authorization",bearer)).andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition",org.hamcrest.Matchers.startsWith("attachment")));
+        mvc.perform(get(path)).andExpect(status().isUnauthorized());
+    }
 }
