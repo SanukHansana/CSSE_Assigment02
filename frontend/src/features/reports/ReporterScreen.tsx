@@ -1,3 +1,4 @@
+import { OfficerScreen } from './OfficerScreen';
 import { Link } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -289,6 +290,18 @@ export function ReporterScreen() {
     setMessage('Draft saved. Review the details below, then confirm submission.');
   }
 
+  if (session?.user.roles.includes('DUTY_OFFICER')) {
+    return (
+      <OfficerScreen
+        session={session}
+        onSignOut={() => {
+          setSession(null);
+          newReport();
+          setReports({ items: [], totalPages: 0 });
+        }}
+      />
+    );
+  }
   return (
     <SafeAreaView style={s.root}>
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">

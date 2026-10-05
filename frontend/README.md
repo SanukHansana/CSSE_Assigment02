@@ -69,7 +69,7 @@ The initial npm audit reports 22 advisories (7 moderate, 15 high), inherited thr
 
 ## Ground reporting frontend — checkpoint 1 of 2
 
-The home page and reporting workspace use the supplied screenshots as visual inspiration. Expo Router starts at `src/app/index.tsx`; open **Ground Reports** to register or sign in. Only Citizen/Community Volunteer accounts submit reports. Duty Officer review is checkpoint 2.
+The home page and reporting workspace use the supplied screenshots as visual inspiration. Expo Router starts at `src/app/index.tsx`; open **Ground Reports** to register or sign in. Only Citizen/Community Volunteer accounts submit reports. Duty Officer accounts now open the review workspace automatically after login.
 
 This checkpoint adds in-memory login (reload requires signing in again), registration, new/existing drafts, JPEG/PNG photo selection and private previews, GPS capture/manual coordinates with external OpenStreetMap link, save/reload, review/confirm submission, and paginated My Reports/status/history. Mutations use the latest acknowledged version. On a conflict reload the saved report; this discards unsaved edits. If a request fails with an unknown server outcome, inspect My Reports before creating another report. No durable offline queue or automatic retry is claimed. No embedded live map is implemented yet.
 
@@ -78,3 +78,11 @@ Run the backend separately, then `npm run web` (default Expo web origin should m
 Manual smoke check with your development database: register a unique citizen, sign in, save an incomplete draft, reload via My Reports, add valid coordinates/description/photo, save again, review/confirm submit, and verify status/history. Check denied GPS permissions retain coordinates, invalid uploads preserve the saved draft, sign-out clears account state, and stale versions require reload. Real MongoDB/browser/native-device end-to-end tests remain manual.
 
 Suggested first commit: `feat: add authenticated ground hazard report submission`. Include the still-uncommitted home/navigation foundation in this first frontend commit. Next (after manually committing): officer queue, checklist/comments, verify/reject, and verified details matching the other screenshots. No automatic commits or Git author changes.
+
+## Ground reporting frontend — checkpoint 2 of 2
+
+Duty Officer login opens the screenshot-inspired navy sidebar and review workspace. Search/paginate by report status, read details/private photo/location/history, explicitly claim a submitted report, save the four tri-state credibility checks and comments, and confirm verification/rejection. All four checks must pass for verification and rejection requires a reason. Each update uses the acknowledged backend version; conflicts instruct the officer to reload. Terminal reports show the saved decision, officer, comments, checks, timestamp, and verification reference. No fabricated risk score, assessment link, or automated warning is displayed. Authorization and assignment ownership are enforced by the backend.
+
+For a manual end-to-end check, submit as a citizen, sign out, sign in with a development DUTY_OFFICER account, refresh the submitted queue, inspect details, start review, save checks/comments, confirm verification, and check the VERIFIED filter. Repeat on another report for rejection and its required reason. Test stale versions with two sessions and another officer assigned to the same report. Public registration creates only citizens; see ../backend/dev-fixtures/README.md for optional isolated demo account setup. Do not assume fixture accounts exist until imported.
+
+Checkpoint 2 verification: TypeScript, lint, and web export pass. Live database/browser/native-device end-to-end behavior remains unverified. Manual commit message: `feat: add officer review and verified report screens`. Next step: run both frontend/backend and perform the end-to-end smoke check before starting another feature.

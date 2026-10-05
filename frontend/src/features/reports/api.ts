@@ -3,6 +3,7 @@ import type { ImagePickerAsset } from 'expo-image-picker';
 import { env } from '../../config/env';
 
 export interface Account {
+  id?: string;
   displayName: string;
   roles: string[];
 }
@@ -18,6 +19,23 @@ export interface Report {
   hazardType: string | null;
   description: string | null;
   location: { latitude: number; longitude: number; areaLabel?: string } | null;
+  reporter?: { displayName: string; type: string };
+  submittedAt?: string;
+  review?: {
+    officerDisplayName: string;
+    startedAt: string;
+    checklist: Checklist;
+    comments: string | null;
+  } | null;
+  verification?: {
+    reference: string;
+    officerDisplayName: string;
+    decision: string;
+    comments: string | null;
+    rejectionReason: string | null;
+    decidedAt: string;
+    checklist: Checklist;
+  } | null;
   photo: { originalFilename: string; viewUrl: string } | null;
   history: { id: string; status: string; occurredAt: string }[];
 }
@@ -83,4 +101,11 @@ export async function uploadPhoto(report: Report, photo: ImagePickerAsset, token
   return request<Report>(`/api/dmc/ground-reports/${report.id}/photo`, token, 'PUT', form, {
     'If-Match': `"${report.version}"`,
   });
+}
+
+export interface Checklist {
+  descriptionSufficientlyDetailed: boolean | null;
+  photoRelevant: boolean | null;
+  gpsCorrespondsToArea: boolean | null;
+  reportingTimeReasonable: boolean | null;
 }
