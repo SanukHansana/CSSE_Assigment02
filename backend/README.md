@@ -110,3 +110,11 @@ The separately authorized custom authentication prerequisite adds registration, 
 ## Ground hazard reporting — Stage 2
 
 Reporter-owned draft creation/editing, photo upload/view/download, report listing/details, and validated submission are implemented. Citizen and Community Volunteer roles are supported. Read the [Stage 2 API and storage guide](docs/ground-hazard-report-stage2.md) for endpoints, version headers, private evidence storage, and error responses. Frontend work, officer review endpoints, and offline synchronization remain later stages.
+
+## Ground hazard reporting — Stage 3
+
+Duty Officers can search the review queue, inspect reports/evidence, claim a review, save credibility checks/comments, and verify or reject reports. Decisions and history use the existing versioned single-document persistence. See the [Stage 3 officer API](docs/ground-hazard-report-stage3.md). Synchronization, verified-evidence integration, and frontend implementation remain later work.
+
+## Simpler report model organization
+
+Small identity, location, photo, and history records are nested within `HazardReport`, alongside its validation helpers. `ReportReview`, `ReportVerification`, and workflow enums remain separate. Existing MongoDB field names and HTTP contracts are unchanged; no data migration is needed.

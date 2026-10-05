@@ -1,6 +1,6 @@
 # Ground hazard reports: Stage 1 domain and proposed API
 
-**Current implementation:** [Stage 2 endpoints and evidence storage](ground-hazard-report-stage2.md) now exist and reuse custom JWT authentication. The notes below preserve the original Stage 1 design and proposed later-stage contract; statements about missing reporting endpoints describe that earlier stage.
+**Current implementation:** [Stage 3 officer review](ground-hazard-report-stage3.md) is implemented. [Stage 2 endpoints and evidence storage](ground-hazard-report-stage2.md) now exist and reuse custom JWT authentication. The notes below preserve the original Stage 1 design and proposed later-stage contract; statements about missing reporting endpoints describe that earlier stage.
 
 ## Scope and reference decisions
 

@@ -1,5 +1,8 @@
 package com.dmc.backend.reporting;
 
+import com.dmc.backend.models.hazard.HazardReport.ReportedLocation;
+import com.dmc.backend.models.hazard.HazardReport.PhotoEvidence;
+import com.dmc.backend.models.hazard.HazardReport.ReportHistoryEvent;
 import com.dmc.backend.models.hazard.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -26,10 +29,10 @@ public final class ReportContracts {
     public record ReporterResponse(String displayName, ReporterType type) { }
     public record PhotoResponse(String id, String originalFilename, String contentType, long sizeBytes,
             Instant uploadedAt, Instant capturedAt, String viewUrl, String downloadUrl) {
-        static PhotoResponse from(HazardReport report) {
+        static PhotoResponse from(HazardReport report, boolean officerView) {
             PhotoEvidence photo = report.getPhoto();
             if (photo == null) return null;
-            String base = "/api/dmc/ground-reports/" + report.getId() + "/photo";
+            String base = "/api/dmc/ground-reports/" + report.getId() + (officerView ? "/review/photo" : "/photo");
             return new PhotoResponse(photo.id(), photo.originalFilename(), photo.contentType(),
                     photo.sizeBytes(), photo.uploadedAt(), photo.capturedAt(), base, base + "/download");
         }
@@ -41,17 +44,32 @@ public final class ReportContracts {
                     event.actor().displayName(), event.occurredAt());
         }
     }
+    public record ReviewResponse(String officerDisplayName, Instant startedAt, CredibilityChecklist checklist, String comments) {
+        static ReviewResponse from(ReportReview review) {
+            return review == null ? null : new ReviewResponse(review.officer().displayName(), review.startedAt(), review.checklist(), review.comments());
+        }
+    }
+    public record VerificationResponse(String reference, String officerDisplayName, VerificationDecision decision,
+            String comments, String rejectionReason, CredibilityChecklist checklist, Instant decidedAt) {
+        static VerificationResponse from(ReportVerification verification) {
+            return verification == null ? null : new VerificationResponse(verification.reference(), verification.officer().displayName(),
+                    verification.decision(), verification.comments(), verification.rejectionReason(), verification.checklist(), verification.decidedAt());
+        }
+    }
     public record ReportResponse(String id, String reference, Long version, ReporterResponse reporter,
             ReportSource source, ReportStatus status, HazardType hazardType, String description,
             ReportedLocation location, PhotoResponse photo, Instant clientCapturedAt,
-            Instant createdAt, Instant updatedAt, Instant submittedAt, List<HistoryResponse> history) {
-        public static ReportResponse from(HazardReport report) {
+            Instant createdAt, Instant updatedAt, Instant submittedAt, List<HistoryResponse> history, ReviewResponse review, VerificationResponse verification) {
+        public static ReportResponse from(HazardReport report) { return from(report, false); }
+        public static ReportResponse fromForReview(HazardReport report) { return from(report, true); }
+        private static ReportResponse from(HazardReport report, boolean officerView) {
             return new ReportResponse(report.getId(), report.getReference(), report.getVersion(),
                     new ReporterResponse(report.getReporter().user().displayName(), report.getReporter().type()),
                     report.getSource(), report.getStatus(), report.getHazardType(), report.getDescription(),
-                    report.getLocation(), PhotoResponse.from(report), report.getClientCapturedAt(),
+                    report.getLocation(), PhotoResponse.from(report, officerView), report.getClientCapturedAt(),
                     report.getCreatedAt(), report.getUpdatedAt(), report.getSubmittedAt(),
-                    report.getHistory().stream().map(HistoryResponse::from).toList());
+                    report.getHistory().stream().map(HistoryResponse::from).toList(),
+                    ReviewResponse.from(report.getReview()), VerificationResponse.from(report.getVerification()));
         }
     }
     public record PageResponse(List<ReportResponse> items, int page, int size, long totalElements, int totalPages) { }

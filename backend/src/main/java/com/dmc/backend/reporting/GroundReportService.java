@@ -1,5 +1,8 @@
 package com.dmc.backend.reporting;
 
+import com.dmc.backend.models.hazard.HazardReport.UserReference;
+import com.dmc.backend.models.hazard.HazardReport.ReporterIdentity;
+import com.dmc.backend.models.hazard.HazardReport.PhotoEvidence;
 import static org.springframework.http.HttpStatus.*;
 
 import com.dmc.backend.auth.*;

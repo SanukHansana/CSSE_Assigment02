@@ -1,7 +1,7 @@
 package com.dmc.backend.reporting;
 
-import com.dmc.backend.models.hazard.PhotoEvidence;
-import com.dmc.backend.models.hazard.UserReference;
+import com.dmc.backend.models.hazard.HazardReport.PhotoEvidence;
+import com.dmc.backend.models.hazard.HazardReport.UserReference;
 import java.time.Instant;
 import org.springframework.web.multipart.MultipartFile;
 
