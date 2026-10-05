@@ -11,7 +11,8 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "spring.config.import=")
+        properties = {"spring.config.import=", "spring.mongodb.uri=mongodb://localhost:27017/dmc_test",
+                "dmc.auth.secret=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="})
 class DmcBackendApplicationTests {
 
     @LocalServerPort

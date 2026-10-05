@@ -38,3 +38,6 @@ build/
 .env.*
 !.env.example
 .DS_Store
+
+# Named private environment files (e.g. Atlas credentials)
+*.env
