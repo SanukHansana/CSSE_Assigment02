@@ -18,10 +18,10 @@ class DmcBackendApplicationTests {
     private int port;
 
     @Test
-    void healthEndpointWorksWithoutDatabaseOperations() throws Exception {
+    void dmcEndpointWorksWithoutDatabaseOperations() throws Exception {
         try (HttpClient client = HttpClient.newHttpClient()) {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:" + port + "/api/health"))
+                    .uri(URI.create("http://localhost:" + port + "/api/dmc"))
                     .timeout(Duration.ofSeconds(10))
                     .GET()
                     .build();

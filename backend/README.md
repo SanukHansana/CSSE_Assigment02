@@ -14,10 +14,10 @@ A Spring Boot 4.1.1 REST API using Maven, Spring MVC, validation, and Spring Dat
 
    You need a JDK version 21 or newer supported by Spring Boot. Maven Wrapper (`mvnw`) downloads Maven and dependencies automatically, so you do not need a separate Maven installation. The first run needs internet access and may take a few minutes. On Windows use `mvnw.cmd spring-boot:run`.
 
-2. Wait for `Started DmcBackendApplication`, then open <http://localhost:8080/api/health> in your browser, or run this in another terminal:
+2. Wait for `Started DmcBackendApplication`, then open <http://localhost:8080/api/dmc> in your browser, or run this in another terminal:
 
    ```sh
-   curl http://localhost:8080/api/health
+   curl http://localhost:8080/api/dmc
    ```
 
    Expected JSON (field order may differ):
@@ -28,7 +28,7 @@ A Spring Boot 4.1.1 REST API using Maven, Spring MVC, validation, and Spring Dat
 
 3. Stop the server with **Ctrl+C**. Restart it after changing Java code.
 
-The root URL `/` has no controller, so it returns 404. Use `/api/health` instead. If port 8080 is occupied, run `PORT=8081 ./mvnw spring-boot:run` and open port 8081.
+The root URL `/` has no controller, so it returns 404. Use `/api/dmc` instead. If port 8080 is occupied, run `PORT=8081 ./mvnw spring-boot:run` and open port 8081.
 
 ## Add your MongoDB connection later
 
@@ -38,7 +38,7 @@ The database connection point is `src/main/resources/application.properties`:
 spring.mongodb.uri=${MONGODB_URI:mongodb://localhost:27017/dmc}
 ```
 
-Until you supply a URL, the driver tries a local MongoDB instance. The application and `/api/health` can run without a database, but you may see MongoDB connection-refused messages. The health endpoint only checks the web application; it does **not** prove the database is connected. Database operations require a reachable MongoDB server.
+Until you supply a URL, the driver tries a local MongoDB instance. The application and `/api/dmc` can run without a database, but you may see MongoDB connection-refused messages. The health endpoint only checks the web application; it does **not** prove the database is connected. Database operations require a reachable MongoDB server.
 
 For local development, run these commands from `backend`:
 
@@ -95,6 +95,6 @@ Run from `backend`:
 java -jar target/backend-0.0.1-SNAPSHOT.jar
 ```
 
-The test starts the web application on a random port and checks `/api/health`; it does not read or write MongoDB. `package` also runs tests and creates the executable JAR. Stop any server already on port 8080 before running the JAR.
+The test starts the web application on a random port and checks `/api/dmc`; it does not read or write MongoDB. `package` also runs tests and creates the executable JAR. Stop any server already on port 8080 before running the JAR.
 
 Official references: [Spring Boot requirements](https://docs.spring.io/spring-boot/system-requirements.html), [MongoDB configuration](https://docs.spring.io/spring-boot/reference/data/nosql.html).
