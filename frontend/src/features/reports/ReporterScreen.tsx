@@ -1,3 +1,4 @@
+import { ReliefScreen } from '../relief/ReliefScreen';
 import { OfficerScreen } from './OfficerScreen';
 import { Link } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -84,7 +85,7 @@ function Field({
     </View>
   );
 }
-export function ReporterScreen() {
+export function ReporterScreen({ workspace = 'reports' }: { workspace?: 'reports' | 'relief' }) {
   const wide = useWindowDimensions().width >= 900;
   const [session, setSession] = useState<Session | null>(null);
   const [register, setRegister] = useState(false);
@@ -290,6 +291,17 @@ export function ReporterScreen() {
     setMessage('Draft saved. Review the details below, then confirm submission.');
   }
 
+  if (session && workspace === 'relief') {
+    return (
+      <ReliefScreen
+        session={session}
+        onSignOut={() => {
+          setSession(null);
+          newReport();
+        }}
+      />
+    );
+  }
   if (session?.user.roles.includes('DUTY_OFFICER')) {
     return (
       <OfficerScreen
@@ -310,7 +322,11 @@ export function ReporterScreen() {
             ◈ DMC <Text style={s.brandSub}>Disaster Reporting Portal</Text>
           </Link>
           <Text style={s.headerText}>
-            {session ? session.user.displayName : 'Ground reporting'}
+            {session
+              ? session.user.displayName
+              : workspace === 'relief'
+                ? 'Relief coordination'
+                : 'Ground reporting'}
           </Text>
         </View>
         <View style={s.content}>
@@ -318,7 +334,9 @@ export function ReporterScreen() {
             <Link href="/" style={s.link}>
               Home
             </Link>
-            <Text style={s.muted}>/ Ground Hazard Reports</Text>
+            <Text style={s.muted}>
+              / {workspace === 'relief' ? 'Relief Resources & Shelters' : 'Ground Hazard Reports'}
+            </Text>
             {session && (
               <Action
                 title="Sign out"
@@ -346,7 +364,7 @@ export function ReporterScreen() {
           <Text style={s.muted}>
             {session
               ? 'Share observations and evidence for Duty Officer review.'
-              : 'Sign in to report hazards and follow your report status.'}
+              : 'Sign in to access your DMC workspace.'}
           </Text>
           {error ? (
             <Text accessibilityRole="alert" style={s.error}>
