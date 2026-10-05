@@ -143,3 +143,7 @@ Stage 4 will scope client-generated idempotency keys to the authenticated report
 Run `./mvnw test` from `backend`. Tests cover both reporter types, incomplete drafts, all legal/illegal state pairs, required final fields, description limits, finite/boundary coordinates, photo metadata and ownership consistency, capture-time retention, decisions/rejection reasons/checklist policy, terminal states, timeline and immutable history, actual BSON conversion, version mapping, and the persistence validation callback. The existing `/api/dmc` web test remains unchanged.
 
 No live database migration, binary upload/download, HTTP ownership enforcement, durable-save failure/concurrency test, reference collision handling service, sync/idempotency flow, or frontend integration is claimed. MongoDB's document-size limit also bounds embedded history; later services should enforce reasonable comments/payload limits and a retention policy before production growth. Stage 5 will measure coverage; Stage 1 makes no coverage-percentage claim.
+
+## Authentication prerequisite added after Stage 1
+
+A separately authorized [custom JWT module](custom-authentication.md) now supplies a `users` collection, authenticated subject IDs, current database roles, and safe user projections. The absence-of-authentication notes above describe the original Stage 1 inspection. Stage 2 should reuse this module rather than introduce another identity store. No reporting endpoints have been added by the authentication prerequisite.

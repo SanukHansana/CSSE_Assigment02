@@ -54,7 +54,7 @@ spring.mongodb.uri=mongodb+srv://USERNAME:PASSWORD@YOUR_CLUSTER.mongodb.net/dmc?
 
 Use your actual cluster, database user, and password. Include a database name such as `/dmc`. For Atlas, allow your development machine's IP in the cluster's network access settings and use a database user's credentials. Percent-encode special characters in the username/password in the URI. The local properties file is ignored by Git; keep credentials out of committed files.
 
-Alternatively, set the `MONGODB_URI` environment variable in your terminal or hosting service before starting the application. A value explicitly set in `application-local.properties` takes precedence over the placeholder above, so use one approach at a time. Spring Boot does not automatically load `.env` files in this project. Restart after changing configuration. No custom MongoClient class is needed: Spring Boot configures it using the MongoDB starter and URI.
+Alternatively, set the `MONGODB_URI` environment variable in your terminal or hosting service before starting the application. A value explicitly set in `application-local.properties` takes precedence over the placeholder above, so use one approach at a time. The custom authentication configuration now imports `.env` as a Java properties file; use unquoted `KEY=value` lines (see the authentication guide). Restart after changing configuration. No custom MongoClient class is needed: Spring Boot configures it using the MongoDB starter and URI.
 
 ## Project structure
 
@@ -102,3 +102,7 @@ Official references: [Spring Boot requirements](https://docs.spring.io/spring-bo
 ## Ground hazard reporting — Stage 1
 
 The backend now includes the ground hazard report domain model and MongoDB persistence foundation. Reporting endpoints are not exposed yet. See the [domain and proposed API contract](docs/ground-hazard-report-api.md) and [explicit migration instructions](migrations/README.md). The existing `/api/dmc` response is unchanged. Authentication integration and private evidence storage remain prerequisites for the later endpoint stages.
+
+## Custom JWT authentication
+
+The separately authorized custom authentication prerequisite adds registration, login, and authenticated account retrieval. See [setup and API documentation](docs/custom-authentication.md). Start from `backend` so its ignored `.env` is loaded. Ground-reporting Stage 2 has not been implemented yet.
