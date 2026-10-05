@@ -98,3 +98,7 @@ java -jar target/backend-0.0.1-SNAPSHOT.jar
 The test starts the web application on a random port and checks `/api/dmc`; it does not read or write MongoDB. `package` also runs tests and creates the executable JAR. Stop any server already on port 8080 before running the JAR.
 
 Official references: [Spring Boot requirements](https://docs.spring.io/spring-boot/system-requirements.html), [MongoDB configuration](https://docs.spring.io/spring-boot/reference/data/nosql.html).
+
+## Ground hazard reporting — Stage 1
+
+The backend now includes the ground hazard report domain model and MongoDB persistence foundation. Reporting endpoints are not exposed yet. See the [domain and proposed API contract](docs/ground-hazard-report-api.md) and [explicit migration instructions](migrations/README.md). The existing `/api/dmc` response is unchanged. Authentication integration and private evidence storage remain prerequisites for the later endpoint stages.

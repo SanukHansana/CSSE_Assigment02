@@ -1,0 +1,6 @@
+package com.dmc.backend.models.hazard;
+
+public enum HistoryEventType {
+    DRAFT_CREATED, DRAFT_UPDATED, EVIDENCE_REPLACED, EVIDENCE_REMOVED,
+    SUBMITTED, REVIEW_STARTED, REVIEW_UPDATED, VERIFIED, REJECTED
+}
