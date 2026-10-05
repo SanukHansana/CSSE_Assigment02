@@ -93,7 +93,7 @@ export function HomeScreen() {
             <View style={[styles.feature, styles.activeFeature, wide && styles.half]}>
               <View style={styles.cardTop}>
                 <Text style={styles.cardNumber}>01</Text>
-                <Text style={styles.badge}>IN DEVELOPMENT</Text>
+                <Text style={styles.badge}>AVAILABLE</Text>
               </View>
               <Text style={styles.cardTitle}>Submit & verify ground hazard reports</Text>
               <Text style={styles.cardBody}>
@@ -108,11 +108,19 @@ export function HomeScreen() {
               <View key={feature.number} style={[styles.feature, wide && styles.half]}>
                 <View style={styles.cardTop}>
                   <Text style={styles.cardNumber}>{feature.number}</Text>
-                  <Text style={styles.plannedBadge}>PLANNED</Text>
+                  <Text style={styles.plannedBadge}>
+                    {feature.number === '02' ? 'AVAILABLE' : 'PLANNED'}
+                  </Text>
                 </View>
                 <Text style={styles.cardTitle}>{feature.title}</Text>
                 <Text style={styles.cardBody}>{feature.description}</Text>
-                <Text style={styles.comingSoon}>Available in a later step</Text>
+                {feature.number === '02' ? (
+                  <Link href="/relief" style={styles.cardLink}>
+                    Open relief workspace →
+                  </Link>
+                ) : (
+                  <Text style={styles.comingSoon}>Available in a later step</Text>
+                )}
               </View>
             ))}
           </View>
