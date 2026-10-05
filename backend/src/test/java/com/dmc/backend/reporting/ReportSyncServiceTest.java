@@ -101,4 +101,41 @@ class ReportSyncServiceTest {
         assertThatThrownBy(() -> service.synchronize("officer", "key", request("Hazard"), photoFile())).isInstanceOf(ReportException.class);
         verify(reports, never()).save(any());
     }
+    @Test void retryResolvesWriteThatSucceededBeforeNetworkFailure() throws Exception {
+        doAnswer(call -> {
+            HazardReport report=version(call.getArgument(0),0);saved.put(report.getId(),report);
+            throw new DataAccessResourceFailureException("acknowledgement lost");
+        }).when(reports).save(any());
+        assertThatThrownBy(() -> service.synchronize("citizen","uncertain",request("Hazard"),photoFile())).isInstanceOf(DataAccessException.class);
+        var retried=service.synchronize("citizen","uncertain",request("Hazard"),photoFile());
+        assertThat(retried.getStatus()).isEqualTo(ReportStatus.SUBMITTED);
+        assertThat(evidence.read(retried.getPhoto())).isNotEmpty();
+        verify(reports,times(1)).save(any());verify(evidence,times(1)).store(any(),any(),any(),any());
+    }
+    @Test void retryAfterOfficerReviewReturnsCurrentStateWithoutRecreatingReport() throws Exception {
+        var report=service.synchronize("citizen","reviewed",request("Hazard"),photoFile());
+        var stored=saved.get(report.getId());stored.startReview(new UserReference("officer","Officer"),CLOCK);
+        var retry=service.synchronize("citizen","reviewed",request("Hazard"),photoFile());
+        assertThat(retry.getStatus()).isEqualTo(ReportStatus.UNDER_REVIEW);assertThat(retry.getReference()).isEqualTo(report.getReference());
+        verify(reports,times(1)).save(any());
+    }
+    @Test void emptyOversizedAndUnreadableUploadsCannotSave() throws Exception {
+        assertThatThrownBy(() -> service.synchronize("citizen","empty",request("Hazard"),new MockMultipartFile("file",new byte[0])))
+                .isInstanceOf(ReportException.class);
+        assertThatThrownBy(() -> service.synchronize("citizen","big",request("Hazard"),new MockMultipartFile("file",new byte[5*1024*1024+1])))
+                .isInstanceOfSatisfying(ReportException.class,e -> assertThat(e.status().value()).isEqualTo(413));
+        var unreadable=mock(org.springframework.web.multipart.MultipartFile.class);when(unreadable.isEmpty()).thenReturn(false);
+        when(unreadable.getSize()).thenReturn(1L);when(unreadable.getInputStream()).thenThrow(new java.io.IOException("private path"));
+        assertThatThrownBy(() -> service.synchronize("citizen","unreadable",request("Hazard"),unreadable))
+                .isInstanceOfSatisfying(ReportException.class,e -> assertThat(e.status().value()).isEqualTo(503));
+        verify(reports,never()).save(any());
+    }
+    @Test void absentSourceDefaultsToWebPortalAndMillisecondsRemainStableOnRetry() throws Exception {
+        var location=new ReportContracts.LocationRequest(0.0,0.0,null,null);
+        var request=new ReportSyncService.SyncRequest(HazardType.FLOODING,"Hazard",location,NOW.plusNanos(100),null,null);
+        var first=service.synchronize("citizen","default-source",request,photoFile());
+        var retryRequest=new ReportSyncService.SyncRequest(HazardType.FLOODING,"Hazard",location,NOW.plusNanos(900),null,ReportSource.WEB_PORTAL);
+        var retry=service.synchronize("citizen","default-source",retryRequest,photoFile());
+        assertThat(first.getSource()).isEqualTo(ReportSource.WEB_PORTAL);assertThat(retry.getId()).isEqualTo(first.getId());
+    }
 }

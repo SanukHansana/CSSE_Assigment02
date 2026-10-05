@@ -52,7 +52,40 @@
 	</dependencies>
 
 	<build>
-		<plugins>
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.14</version>
+                <configuration>
+                    <!-- Measure the selected use case, including its HTTP/DTO/model code. -->
+                    <includes>
+                        <include>com/dmc/backend/models/hazard/**</include>
+                        <include>com/dmc/backend/reporting/**</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>reporting-coverage-agent</id>
+                        <goals><goal>prepare-agent</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>reporting-coverage-report</id>
+                        <phase>verify</phase>
+                        <goals><goal>report</goal><goal>check</goal></goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit><counter>LINE</counter><value>COVEREDRATIO</value><minimum>0.80</minimum></limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>

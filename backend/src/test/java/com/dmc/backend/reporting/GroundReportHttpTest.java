@@ -147,6 +147,15 @@ class GroundReportHttpTest {
         mvc.perform(delete(path() + "/photo").header("Authorization", bearer()).header("If-Match", "\"1\""))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("REPORT_NOT_EDITABLE"));
     }
+    @Test void ownedListAndDraftPhotoRemovalReturnPersistedState() throws Exception {
+        when(reports.findByReporterUserSubjectId(eq("citizen"),any())).thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(copy(persisted))));
+        mvc.perform(get("/api/dmc/ground-reports/mine").header("Authorization",bearer()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].status").value("DRAFT"));
+        persisted=complete();
+        mvc.perform(delete(path()+"/photo").header("Authorization",bearer()).header("If-Match","\"0\""))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.photo").isEmpty()).andExpect(jsonPath("$.version").value(1));
+    }
+
     private String path() { return "/api/dmc/ground-reports/" + persisted.getId(); }
     private String bearer() { return "Bearer " + token; }
     private String token(String subject) {

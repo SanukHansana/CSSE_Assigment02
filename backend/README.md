@@ -101,7 +101,7 @@ Official references: [Spring Boot requirements](https://docs.spring.io/spring-bo
 
 ## Ground hazard reporting — Stage 1
 
-The backend now includes the ground hazard report domain model and MongoDB persistence foundation. Reporting endpoints are not exposed yet. See the [domain and proposed API contract](docs/ground-hazard-report-api.md) and [explicit migration instructions](migrations/README.md). The existing `/api/dmc` response is unchanged. Authentication integration and private evidence storage remain prerequisites for the later endpoint stages.
+The backend now includes the ground hazard report domain model and MongoDB persistence foundation. This section describes the original Stage 1 foundation; reporting endpoints are now implemented in Stages 2–4. See the [domain and proposed API contract](docs/ground-hazard-report-api.md) and [explicit migration instructions](migrations/README.md). The existing `/api/dmc` response is unchanged. Authentication integration and private evidence storage were subsequently added.
 
 ## Custom JWT authentication
 
@@ -122,3 +122,9 @@ Small identity, location, photo, and history records are nested within `HazardRe
 ## Ground hazard reporting — Stage 4
 
 Completed locally queued reports can be accepted through duplicate-safe synchronization. DMC Officers can access verified supporting reports and photos. See the [Stage 4 API and retry contract](docs/ground-hazard-report-stage4.md). Device offline storage and automatic retry scheduling remain frontend work.
+
+## Ground hazard reporting — Stage 5 verification and integration
+
+The five backend stages are complete. See the [final integration and validation guide](docs/ground-hazard-report-integration.md) for screenshot-to-endpoint mapping, remaining frontend work, design improvements, and honest test limits. `./mvnw clean verify` runs tests, builds the executable JAR, generates `target/site/jacoco/index.html`, and checks at least 80% line coverage for hazard-report models/reporting code. The final Stage 5 run passed 129 tests with 98.05% line coverage and 76.76% branch coverage. These are backend execution metrics, not live database or frontend verification.
+
+[Fictional development fixtures](dev-fixtures/README.md) generate local demo accounts/reports/photo files through a test; optional import is restricted to `dmc_demo` and must be run explicitly. No live database import was performed.
