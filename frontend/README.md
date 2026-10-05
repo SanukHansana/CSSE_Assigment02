@@ -66,3 +66,15 @@ Official reference: [Expo create-expo-app templates](https://docs.expo.dev/more/
 ## Dependency audit
 
 The initial npm audit reports 22 advisories (7 moderate, 15 high), inherited through the Expo/React Native dependency tree. Audit suggests incompatible Expo/React Native downgrades for several entries; do not run `npm audit fix --force` blindly. Recheck advisories and compatible upstream fixes before production release.
+
+## Ground reporting frontend — checkpoint 1 of 2
+
+The home page and reporting workspace use the supplied screenshots as visual inspiration. Expo Router starts at `src/app/index.tsx`; open **Ground Reports** to register or sign in. Only Citizen/Community Volunteer accounts submit reports. Duty Officer review is checkpoint 2.
+
+This checkpoint adds in-memory login (reload requires signing in again), registration, new/existing drafts, JPEG/PNG photo selection and private previews, GPS capture/manual coordinates with external OpenStreetMap link, save/reload, review/confirm submission, and paginated My Reports/status/history. Mutations use the latest acknowledged version. On a conflict reload the saved report; this discards unsaved edits. If a request fails with an unknown server outcome, inspect My Reports before creating another report. No durable offline queue or automatic retry is claimed. No embedded live map is implemented yet.
+
+Run the backend separately, then `npm run web` (default Expo web origin should match the backend `WEB_ALLOWED_ORIGINS`, normally `http://localhost:8081`). If Expo selects another port, configure the matching backend origin and restart it. For physical devices use `EXPO_PUBLIC_API_BASE_URL` with the computer LAN IP; localhost refers to the device itself. No secrets belong in frontend environment variables.
+
+Manual smoke check with your development database: register a unique citizen, sign in, save an incomplete draft, reload via My Reports, add valid coordinates/description/photo, save again, review/confirm submit, and verify status/history. Check denied GPS permissions retain coordinates, invalid uploads preserve the saved draft, sign-out clears account state, and stale versions require reload. Real MongoDB/browser/native-device end-to-end tests remain manual.
+
+Suggested first commit: `feat: add authenticated ground hazard report submission`. Include the still-uncommitted home/navigation foundation in this first frontend commit. Next (after manually committing): officer queue, checklist/comments, verify/reject, and verified details matching the other screenshots. No automatic commits or Git author changes.
