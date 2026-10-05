@@ -14,7 +14,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
-@RestControllerAdvice(assignableTypes = {GroundReportController.class, OfficerReviewController.class})
+@RestControllerAdvice(assignableTypes = {GroundReportController.class, OfficerReviewController.class, ReportSyncController.class, VerifiedEvidenceController.class})
 public class ReportErrorHandler {
     public record ErrorResponse(String code, String message, List<ReportException.FieldError> fieldErrors) { }
     @ExceptionHandler(ReportException.class)

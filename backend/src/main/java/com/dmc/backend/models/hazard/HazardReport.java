@@ -32,6 +32,7 @@ public class HazardReport {
     @Version
     private Long version;
     private int schemaVersion = 1;
+    private String syncDigest; // Optional: completed local submission digest, never returned in DTOs.
     @Valid
     @NotNull
     private ReporterIdentity reporter;
@@ -77,6 +78,18 @@ public class HazardReport {
         report.append(HistoryEventType.DRAFT_CREATED, null, reporter.user(), report.createdAt);
         return report;
     }
+
+    /** Stage 4 assigns a deterministic server ID so MongoDB _id enforces duplicate-safe reception. */
+    public static HazardReport synchronizedDraft(ReporterIdentity reporter, ReportSource source,
+            Instant clientCapturedAt, String id, String digest, Clock clock) {
+        if (id == null || !id.matches("SYNC-[a-f0-9]{64}") || digest == null || !digest.matches("[a-f0-9]{64}"))
+            throw new IllegalArgumentException("invalid synchronization identity");
+        HazardReport report = draft(reporter, source, clientCapturedAt, clock);
+        report.id = id;
+        report.syncDigest = digest;
+        return report;
+    }
+    public String getSyncDigest() { return syncDigest; }
 
     /** Incomplete drafts are allowed, but supplied data must still satisfy its constraints. */
     public void updateDraft(HazardType hazardType, String description,

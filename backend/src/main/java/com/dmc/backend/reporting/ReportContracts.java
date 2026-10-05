@@ -29,10 +29,10 @@ public final class ReportContracts {
     public record ReporterResponse(String displayName, ReporterType type) { }
     public record PhotoResponse(String id, String originalFilename, String contentType, long sizeBytes,
             Instant uploadedAt, Instant capturedAt, String viewUrl, String downloadUrl) {
-        static PhotoResponse from(HazardReport report, boolean officerView) {
+        static PhotoResponse from(HazardReport report, String photoPath) {
             PhotoEvidence photo = report.getPhoto();
             if (photo == null) return null;
-            String base = "/api/dmc/ground-reports/" + report.getId() + (officerView ? "/review/photo" : "/photo");
+            String base = "/api/dmc/ground-reports/" + report.getId() + "/" + photoPath;
             return new PhotoResponse(photo.id(), photo.originalFilename(), photo.contentType(),
                     photo.sizeBytes(), photo.uploadedAt(), photo.capturedAt(), base, base + "/download");
         }
@@ -60,13 +60,14 @@ public final class ReportContracts {
             ReportSource source, ReportStatus status, HazardType hazardType, String description,
             ReportedLocation location, PhotoResponse photo, Instant clientCapturedAt,
             Instant createdAt, Instant updatedAt, Instant submittedAt, List<HistoryResponse> history, ReviewResponse review, VerificationResponse verification) {
-        public static ReportResponse from(HazardReport report) { return from(report, false); }
-        public static ReportResponse fromForReview(HazardReport report) { return from(report, true); }
-        private static ReportResponse from(HazardReport report, boolean officerView) {
+        public static ReportResponse from(HazardReport report) { return from(report, "photo"); }
+        public static ReportResponse fromForReview(HazardReport report) { return from(report, "review/photo"); }
+        public static ReportResponse fromForAssessment(HazardReport report) { return from(report, "assessment/photo"); }
+        private static ReportResponse from(HazardReport report, String photoPath) {
             return new ReportResponse(report.getId(), report.getReference(), report.getVersion(),
                     new ReporterResponse(report.getReporter().user().displayName(), report.getReporter().type()),
                     report.getSource(), report.getStatus(), report.getHazardType(), report.getDescription(),
-                    report.getLocation(), PhotoResponse.from(report, officerView), report.getClientCapturedAt(),
+                    report.getLocation(), PhotoResponse.from(report, photoPath), report.getClientCapturedAt(),
                     report.getCreatedAt(), report.getUpdatedAt(), report.getSubmittedAt(),
                     report.getHistory().stream().map(HistoryResponse::from).toList(),
                     ReviewResponse.from(report.getReview()), VerificationResponse.from(report.getVerification()));
