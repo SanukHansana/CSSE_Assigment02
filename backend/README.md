@@ -118,3 +118,7 @@ Duty Officers can search the review queue, inspect reports/evidence, claim a rev
 ## Simpler report model organization
 
 Small identity, location, photo, and history records are nested within `HazardReport`, alongside its validation helpers. `ReportReview`, `ReportVerification`, and workflow enums remain separate. Existing MongoDB field names and HTTP contracts are unchanged; no data migration is needed.
+
+## Ground hazard reporting — Stage 4
+
+Completed locally queued reports can be accepted through duplicate-safe synchronization. DMC Officers can access verified supporting reports and photos. See the [Stage 4 API and retry contract](docs/ground-hazard-report-stage4.md). Device offline storage and automatic retry scheduling remain frontend work.
