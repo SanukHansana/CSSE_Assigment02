@@ -109,12 +109,16 @@ export function HomeScreen() {
                 <View style={styles.cardTop}>
                   <Text style={styles.cardNumber}>{feature.number}</Text>
                   <Text style={styles.plannedBadge}>
-                    {feature.number === '02' ? 'AVAILABLE' : 'PLANNED'}
+                    {feature.number !== '04' ? 'AVAILABLE' : 'PLANNED'}
                   </Text>
                 </View>
                 <Text style={styles.cardTitle}>{feature.title}</Text>
                 <Text style={styles.cardBody}>{feature.description}</Text>
-                {feature.number === '02' ? (
+                {feature.number === '03' ? (
+                  <Link href="/warnings" style={styles.cardLink}>
+                    Open warning workspace →
+                  </Link>
+                ) : feature.number === '02' ? (
                   <Link href="/relief" style={styles.cardLink}>
                     Open relief workspace →
                   </Link>

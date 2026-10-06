@@ -1,3 +1,4 @@
+import { WarningScreen } from '../warnings/WarningScreen';
 import { ReliefScreen } from '../relief/ReliefScreen';
 import { OfficerScreen } from './OfficerScreen';
 import { Link } from 'expo-router';
@@ -85,7 +86,11 @@ function Field({
     </View>
   );
 }
-export function ReporterScreen({ workspace = 'reports' }: { workspace?: 'reports' | 'relief' }) {
+export function ReporterScreen({
+  workspace = 'reports',
+}: {
+  workspace?: 'reports' | 'relief' | 'warnings';
+}) {
   const wide = useWindowDimensions().width >= 900;
   const [session, setSession] = useState<Session | null>(null);
   const [register, setRegister] = useState(false);
@@ -291,6 +296,16 @@ export function ReporterScreen({ workspace = 'reports' }: { workspace?: 'reports
     setMessage('Draft saved. Review the details below, then confirm submission.');
   }
 
+  if (session && workspace === 'warnings')
+    return (
+      <WarningScreen
+        session={session}
+        onSignOut={() => {
+          setSession(null);
+          newReport();
+        }}
+      />
+    );
   if (session && workspace === 'relief') {
     return (
       <ReliefScreen
@@ -335,7 +350,12 @@ export function ReporterScreen({ workspace = 'reports' }: { workspace?: 'reports
               Home
             </Link>
             <Text style={s.muted}>
-              / {workspace === 'relief' ? 'Relief Resources & Shelters' : 'Ground Hazard Reports'}
+              /{' '}
+              {workspace === 'warnings'
+                ? 'Disaster Warnings'
+                : workspace === 'relief'
+                  ? 'Relief Resources & Shelters'
+                  : 'Ground Hazard Reports'}
             </Text>
             {session && (
               <Action
