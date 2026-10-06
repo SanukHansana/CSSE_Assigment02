@@ -33,3 +33,15 @@ Automated tests are skipped at the user's request. Compilation only is checked; 
 
 Manual commit: `feat: add relief inventory and shelter management`
 Next step: resource allocations, occupancy changes, and history (Arosha's second commit).
+
+## Step 2 — frontend and backend coordination
+
+Open a resource/shelter from the frontend list to allocate supplies or record arrivals/departures, and view allocation/activity history. Actor/time comes from the server. Stored histories on older documents default to empty; no migration is required.
+
+POST `/resources/{id}/allocations`: `{"requestId":"unique-operation-id","expectedVersion":0,"shelterId":"saved-shelter-id","quantity":20,"note":"Drinking water for residents"}`. Deducts stock and records shelter history in one MongoDB transaction. Requires Atlas or a replica set; standalone MongoDB cannot run this allocation workflow. Closed shelters reject allocations. A FULL shelter may still receive supplies.
+
+POST `/shelters/{id}/occupancy`: `{"requestId":"unique-operation-id","expectedVersion":0,"change":5,"note":"Five new arrivals"}`. Use negative change for departures. Enforces capacity, prevents admissions to closed shelters, and derives OPEN/FULL while retaining CLOSED.
+
+Retries with the same request ID and same payload return the saved record without repeating the operation; changed payload is rejected. The UI retains its pending ID after uncertain failures; do not change the form before retry. Reload to inspect history before a new operation. Allocation histories live inside resource/shelter documents and administrative edits preserve them. The step-1 PUT endpoints remain authorized full inventory/occupancy corrections and append activity history. No automatic distribution to citizens, procurement, or physical delivery integration is claimed.
+
+No automated tests were run at user request. Compile/type/lint checks only; runtime/transaction behavior remains unverified. Manual commit (Git author Arosha): `feat: coordinate relief allocations and shelter occupancy`. Next: step 3 compose/preview warnings (frontend and backend); switch Git author to Anuja before that commit.

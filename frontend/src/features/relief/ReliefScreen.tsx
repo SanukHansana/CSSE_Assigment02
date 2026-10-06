@@ -13,6 +13,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ApiError, request } from '../reports/api';
 import type { Session } from '../reports/api';
 
+interface History {
+  id: string;
+  type: string;
+  detail: string;
+  officer: string;
+  at: string;
+}
+interface Allocation {
+  requestId: string;
+  shelterName: string;
+  quantity: number;
+  note: string;
+  officer: string;
+  at: string;
+}
 interface Resource {
   id: string;
   version: number;
@@ -23,6 +38,8 @@ interface Resource {
   unit: string;
   updatedBy: string;
   updatedAt: string;
+  history?: History[];
+  allocations?: Allocation[];
 }
 interface Shelter {
   id: string;
@@ -34,6 +51,7 @@ interface Shelter {
   status: string;
   updatedBy: string;
   updatedAt: string;
+  history?: History[];
 }
 interface Page {
   items: (Resource | Shelter)[];
@@ -82,6 +100,15 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [shelterId, setShelterId] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [change, setChange] = useState('');
+  const [note, setNote] = useState('');
+  const [destinations, setDestinations] = useState<Shelter[]>([]);
+  const [destinationPage, setDestinationPage] = useState(0);
+  const [destinationPages, setDestinationPages] = useState(0);
+  // Retain the request ID after an uncertain failure so retry cannot deduct stock twice.
+  const [operation, setOperation] = useState<{ id: string; signature: string } | null>(null);
   const allowed = session.user.roles.includes('DMC_OFFICER');
   const base = `/api/dmc/relief/${tab}`;
   async function run(work: () => Promise<void>) {
@@ -104,6 +131,7 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
     setPage(next);
   }
   function edit(item: Resource | Shelter) {
+    setOperation(null);
     setSelected(item);
     setForm({
       ...initial,
@@ -128,6 +156,54 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
     setPage(0);
     setError('');
     setMessage('');
+  }
+  async function loadDestinations(next = 0) {
+    const data = await request<{ items: Shelter[]; totalPages: number }>(
+      `/api/dmc/relief/shelters?page=${next}&size=20`,
+      session.accessToken,
+    );
+    setDestinations(data.items);
+    setDestinationPage(next);
+    setDestinationPages(data.totalPages);
+  }
+  async function coordinate() {
+    if (!selected) return;
+    const amount = Number(tab === 'resources' ? quantity : change);
+    if (!Number.isSafeInteger(amount) || amount === 0 || (tab === 'resources' && amount < 0))
+      throw new Error('Enter a valid whole quantity or a nonzero occupancy change.');
+    if (tab === 'resources' && !shelterId) throw new Error('Select a destination shelter.');
+    if (!note.trim()) throw new Error('Enter a short reason or note.');
+    const signature = JSON.stringify([selected.id, tab, amount, shelterId, note.trim()]);
+    if (operation && operation.signature !== signature)
+      throw new Error(
+        'An earlier operation has an uncertain outcome. Retry it with the original values or reload the saved record to inspect history before starting a new one.',
+      );
+    const requestId =
+      operation?.id ||
+      `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+    setOperation({ id: requestId, signature });
+    const body =
+      tab === 'resources'
+        ? {
+            requestId,
+            expectedVersion: selected.version,
+            shelterId,
+            quantity: amount,
+            note: note.trim(),
+          }
+        : { requestId, expectedVersion: selected.version, change: amount, note: note.trim() };
+    const saved = await request<Resource | Shelter>(
+      `${base}/${selected.id}/${tab === 'resources' ? 'allocations' : 'occupancy'}`,
+      session.accessToken,
+      'POST',
+      body,
+    );
+    edit(saved);
+    setOperation(null);
+    setQuantity('');
+    setChange('');
+    setNote('');
+    setMessage('Coordination saved successfully. Refresh the list for updated totals.');
   }
   async function save() {
     if (!form.name.trim() || !form.location.trim())
@@ -394,6 +470,121 @@ export function ReliefScreen({ session, onSignOut }: { session: Session; onSignO
                           )
                         }
                       />
+                      <Text style={s.heading}>
+                        {tab === 'resources' ? 'Allocate to shelter' : 'Update occupancy'}
+                      </Text>
+                      {tab === 'resources' ? (
+                        <>
+                          <Action
+                            title="Load Destination Shelters"
+                            disabled={busy}
+                            onPress={() => void run(() => loadDestinations())}
+                          />
+                          {destinations.map((item) => (
+                            <Pressable
+                              key={item.id}
+                              accessibilityRole="button"
+                              disabled={busy || item.status === 'CLOSED'}
+                              onPress={() => setShelterId(item.id)}
+                              style={[
+                                s.chip,
+                                shelterId === item.id && { backgroundColor: '#D9EAFD' },
+                              ]}
+                            >
+                              <Text style={s.body}>
+                                {item.name} · {item.status}
+                              </Text>
+                            </Pressable>
+                          ))}
+                          {destinationPages > 1 && (
+                            <View style={s.row}>
+                              <Action
+                                title="Previous shelters"
+                                disabled={busy || destinationPage === 0}
+                                onPress={() =>
+                                  void run(() => loadDestinations(destinationPage - 1))
+                                }
+                              />
+                              <Action
+                                title="More shelters"
+                                disabled={busy || destinationPage + 1 >= destinationPages}
+                                onPress={() =>
+                                  void run(() => loadDestinations(destinationPage + 1))
+                                }
+                              />
+                            </View>
+                          )}
+                          <TextInput
+                            accessibilityLabel="Allocation quantity"
+                            placeholder="Quantity to allocate"
+                            editable={!busy}
+                            value={quantity}
+                            onChangeText={setQuantity}
+                            keyboardType="number-pad"
+                            style={s.input}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <Text style={s.muted}>
+                            Positive numbers add occupants; negative numbers record departures.
+                          </Text>
+                          <TextInput
+                            accessibilityLabel="Occupancy change"
+                            placeholder="Change (for example 5 or -3)"
+                            editable={!busy}
+                            value={change}
+                            onChangeText={setChange}
+                            keyboardType="numbers-and-punctuation"
+                            style={s.input}
+                          />
+                        </>
+                      )}
+                      <TextInput
+                        accessibilityLabel="Coordination note"
+                        placeholder="Reason / note"
+                        editable={!busy}
+                        value={note}
+                        onChangeText={setNote}
+                        maxLength={500}
+                        style={s.input}
+                      />
+                      <Action
+                        title={tab === 'resources' ? 'Confirm Allocation' : 'Save Occupancy Change'}
+                        disabled={busy}
+                        onPress={() => void run(coordinate)}
+                      />
+                      {operation && (
+                        <Text style={s.muted}>
+                          Pending request {operation.id}. Retry the same values after a connection
+                          failure; reload to inspect the saved history.
+                        </Text>
+                      )}
+                      {'availableQuantity' in selected && (
+                        <>
+                          <Text style={s.heading}>Allocation history</Text>
+                          {(selected.allocations || []).map((item) => (
+                            <Text key={item.requestId} style={s.body}>
+                              {item.quantity} {selected.unit} → {item.shelterName}
+                              {'\n'}
+                              {item.officer} · {new Date(item.at).toLocaleString()}
+                              {'\n'}
+                              {item.note}
+                            </Text>
+                          ))}
+                        </>
+                      )}
+                      <Text style={s.heading}>Activity history</Text>
+                      {(selected.history || []).length === 0 && (
+                        <Text style={s.muted}>No recorded changes yet.</Text>
+                      )}
+                      {(selected.history || []).map((item) => (
+                        <Text key={item.id} style={s.body}>
+                          {item.detail}
+                          {'\n'}
+                          {item.officer} · {new Date(item.at).toLocaleString()}
+                        </Text>
+                      ))}
                     </>
                   )}
                 </View>
