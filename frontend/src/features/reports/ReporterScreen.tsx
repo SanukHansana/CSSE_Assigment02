@@ -1,3 +1,4 @@
+import { RescueScreen } from '../rescue/RescueScreen';
 import { WarningScreen } from '../warnings/WarningScreen';
 import { ReliefScreen } from '../relief/ReliefScreen';
 import { OfficerScreen } from './OfficerScreen';
@@ -89,7 +90,7 @@ function Field({
 export function ReporterScreen({
   workspace = 'reports',
 }: {
-  workspace?: 'reports' | 'relief' | 'warnings';
+  workspace?: 'reports' | 'relief' | 'warnings' | 'rescue';
 }) {
   const wide = useWindowDimensions().width >= 900;
   const [session, setSession] = useState<Session | null>(null);
@@ -296,6 +297,16 @@ export function ReporterScreen({
     setMessage('Draft saved. Review the details below, then confirm submission.');
   }
 
+  if (session && workspace === 'rescue')
+    return (
+      <RescueScreen
+        session={session}
+        onSignOut={() => {
+          setSession(null);
+          newReport();
+        }}
+      />
+    );
   if (session && workspace === 'warnings')
     return (
       <WarningScreen
