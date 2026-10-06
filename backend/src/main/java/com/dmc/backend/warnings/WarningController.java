@@ -7,6 +7,7 @@ import jakarta.validation.constraints.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Sort;
@@ -48,7 +49,7 @@ public class WarningController {
         String id=UUID.randomUUID().toString();
         return mongo.insert(new DisasterWarning(id,null,"WR-"+id.substring(0,8).toUpperCase(),body.hazard().strip(),body.level(),
                 body.affectedArea().strip(),body.message().strip(),body.instructions().strip(),body.channels(),body.validUntil(),
-                Status.DRAFT,officer,at,officer,at));
+                Status.DRAFT,officer,at,officer,at,List.of(),List.of()));
     }
     @PutMapping("/{id}")
     public DisasterWarning update(@AuthenticationPrincipal Jwt jwt, @PathVariable String id, @Valid @RequestBody DraftRequest body) {
@@ -58,7 +59,65 @@ public class WarningController {
         if (current.status()!=Status.DRAFT) throw fail(HttpStatus.CONFLICT,"Only drafts can be edited.");
         return mongo.save(new DisasterWarning(current.id(),current.version(),current.reference(),body.hazard().strip(),body.level(),
                 body.affectedArea().strip(),body.message().strip(),body.instructions().strip(),body.channels(),body.validUntil(),Status.DRAFT,
-                current.createdBy(),current.createdAt(),auth.requireActiveAccount(jwt.getSubject()).displayName(),clock.instant()));
+                current.createdBy(),current.createdAt(),auth.requireActiveAccount(jwt.getSubject()).displayName(),clock.instant(),current.deliveries(),current.history()));
+    }
+    public record BroadcastRequest(@NotBlank @Size(max=100) String requestId,
+            @NotNull @PositiveOrZero Long expectedVersion, Channel simulateFailureChannel) { }
+    public record CancelRequest(@NotBlank @Size(max=100) String requestId,
+            @NotNull @PositiveOrZero Long expectedVersion, @NotBlank @Size(max=500) String reason) { }
+    @PostMapping("/{id}/broadcast")
+    public DisasterWarning broadcast(@AuthenticationPrincipal Jwt jwt, @PathVariable String id,
+            @Valid @RequestBody BroadcastRequest body) { return deliver(jwt,id,body,false); }
+    @PostMapping("/{id}/retry")
+    public DisasterWarning retry(@AuthenticationPrincipal Jwt jwt, @PathVariable String id,
+            @Valid @RequestBody BroadcastRequest body) { return deliver(jwt,id,body,true); }
+    @PostMapping("/{id}/cancel")
+    public DisasterWarning cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable String id,
+            @Valid @RequestBody CancelRequest body) {
+        DisasterWarning current=find(id);
+        String detail=body.reason().strip();
+        if (replay(current,body.requestId(),"CANCEL",detail)) return current;
+        version(current,body.expectedVersion());
+        if (current.status()!=Status.ISSUED) throw fail(HttpStatus.CONFLICT,"Only issued warnings can be cancelled.");
+        return store(current,Status.CANCELLED,current.deliveries(),body.requestId(),"CANCEL",detail,jwt);
+    }
+    private DisasterWarning deliver(Jwt jwt,String id,BroadcastRequest body,boolean retry) {
+        DisasterWarning current=find(id);
+        String action=retry ? "RETRY" : "BROADCAST";
+        String detail="SIMULATION; failed channel: "+body.simulateFailureChannel();
+        if (replay(current,body.requestId(),action,detail)) return current;
+        version(current,body.expectedVersion());
+        if (current.status()!=(retry ? Status.ISSUED : Status.DRAFT)) throw fail(HttpStatus.CONFLICT,"Warning is not in the required state.");
+        if (!current.validUntil().isAfter(clock.instant())) throw fail(HttpStatus.CONFLICT,"Warning expired. Prepare a new draft.");
+        if (body.simulateFailureChannel()!=null && !current.channels().contains(body.simulateFailureChannel()))
+            throw fail(HttpStatus.BAD_REQUEST,"Failure channel must be selected in the warning.");
+        if (retry && current.deliveries().stream().noneMatch(d -> d.status().equals("FAILED")))
+            throw fail(HttpStatus.CONFLICT,"No failed channels to retry.");
+        List<Delivery> deliveries=new ArrayList<>();
+        for (Channel channel:current.channels()) {
+            Delivery previous=current.deliveries().stream().filter(d -> d.channel()==channel).findFirst().orElse(null);
+            if (retry && previous!=null && !previous.status().equals("FAILED")) { deliveries.add(previous); continue; }
+            deliveries.add(new Delivery(channel,channel==body.simulateFailureChannel() ? "FAILED" : "SIMULATED_SENT",
+                    previous==null ? 1 : previous.attempts()+1,clock.instant()));
+        }
+        // No external sends: simulated outcomes and issue/history are one versioned document save.
+        return store(current,Status.ISSUED,deliveries,body.requestId(),action,detail,jwt);
+    }
+    private boolean replay(DisasterWarning warning,String requestId,String action,String detail) {
+        Event previous=warning.history().stream().filter(e -> e.requestId().equals(requestId)).findFirst().orElse(null);
+        if (previous==null) return false;
+        if (!previous.action().equals(action) || !previous.detail().equals(detail)) throw fail(HttpStatus.CONFLICT,"Request ID was already used for different input.");
+        return true;
+    }
+    private void version(DisasterWarning warning,Long expected) {
+        if (!expected.equals(warning.version())) throw fail(HttpStatus.CONFLICT,"Warning changed. Reload before continuing.");
+    }
+    private DisasterWarning store(DisasterWarning current,Status status,List<Delivery> deliveries,String requestId,String action,String detail,Jwt jwt) {
+        String officer=auth.requireActiveAccount(jwt.getSubject()).displayName(); Instant at=clock.instant();
+        List<Event> history=new ArrayList<>(current.history()); history.add(new Event(requestId,action,detail,officer,at));
+        return mongo.save(new DisasterWarning(current.id(),current.version(),current.reference(),current.hazard(),current.level(),
+                current.affectedArea(),current.message(),current.instructions(),current.channels(),current.validUntil(),status,
+                current.createdBy(),current.createdAt(),officer,at,deliveries,history));
     }
     private void future(DraftRequest body) {
         if (!body.validUntil().isAfter(clock.instant())) throw fail(HttpStatus.BAD_REQUEST,"Warning expiry must be in the future.");
