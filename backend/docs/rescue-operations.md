@@ -13,3 +13,13 @@ Team example:
 {"name":"District Rescue Unit A","specialization":"FLOOD_RESCUE","location":"Peliyagoda","latitude":6.96,"longitude":79.88,"status":"AVAILABLE"}
 ```
 No automated tests at user request; compile/type/lint checks only. No live rescue dispatch or external data change during implementation. Manual commit: `feat: add rescue incidents and team management`. Next: final step 6, team assignment, operation progress and completion in frontend/backend; keep Git author Sanuk.
+
+## Final step 6 — assignment, progress and completion
+
+Open a saved incident in Rescue Operations. Load/select an available team, enter a coordinator note and assign. Update ASSIGNED → EN_ROUTE → ON_SITE → COMPLETED, or cancel an active assignment. Optional manually confirmed team coordinates/address can accompany progress. Completed/cancelled assignments release the team to AVAILABLE. Multiple available teams may support one incident, but each team can have only one active incident. Resolve requires at least one completed assignment and no active assignments; close requires RESOLVED. History records the officer, time, request ID and operation.
+
+POST `/incidents/{id}/assignments`: `{"requestId":"unique-id","expectedVersion":0,"teamId":"saved-team-id","teamVersion":0,"note":"Flood rescue team selected"}`. POST `/incidents/{id}/assignments/{assignmentId}/progress`: `{"requestId":"new-unique-id","expectedVersion":1,"status":"EN_ROUTE","note":"Team departed"}`; optional latitude/longitude must be supplied together, plus optional location. POST `/incidents/{id}/status`: `{"requestId":"new-unique-id","expectedVersion":4,"status":"RESOLVED","note":"Required rescue operations completed"}` then CLOSED with a new request ID/version.
+
+Assignments and team reservation/release save together in a MongoDB transaction (Atlas/replica set required). Version checks prevent conflicting writes. Stable request IDs protect retries; different input with a used ID conflicts. No live dispatch, SMS, GPS stream, route optimization or travel-time estimates. Coordination is recorded in the coursework app, not sent to a real rescue service.
+
+No automated tests at user request. Compile/type/lint checks only, live database transaction behavior unverified. All six implementation checkpoints now include frontend/backend. Git author Sanuk; manual commit: `feat: coordinate rescue assignments and operation completion`.

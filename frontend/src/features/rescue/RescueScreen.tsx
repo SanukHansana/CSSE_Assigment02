@@ -1,3 +1,4 @@
+import { RescueOperations } from './RescueOperations';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -13,6 +14,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ApiError, request } from '../reports/api';
 import type { Session } from '../reports/api';
+export interface Assignment {
+  id: string;
+  teamId: string;
+  teamName: string;
+  status: string;
+  note: string;
+  officer: string;
+  assignedAt: string;
+  updatedAt: string;
+}
 export interface Incident {
   id: string;
   version: number;
@@ -27,6 +38,7 @@ export interface Incident {
   status: string;
   updatedBy: string;
   updatedAt: string;
+  assignments?: Assignment[];
   history: { id: string; detail: string; officer: string; at: string }[];
 }
 export interface Team {
@@ -453,9 +465,18 @@ export function RescueScreen({ session, onSignOut }: { session: Session; onSignO
                       )}
                     </>
                   )}
+                  {selected && 'reference' in selected && (
+                    <RescueOperations
+                      incident={selected}
+                      token={session.accessToken}
+                      busy={busy}
+                      onUpdated={open}
+                      run={run}
+                    />
+                  )}
                   <Text style={s.note}>
-                    Assignment and operation monitoring are added in the final step. This screen
-                    does not dispatch real emergency services.
+                    Operations record manual coordinator updates. No real emergency dispatch or live
+                    GPS feed is connected.
                   </Text>
                 </View>
               </View>
