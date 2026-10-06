@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -27,6 +27,8 @@ interface Warning {
   status: string;
   createdBy: string;
   createdAt: string;
+  deliveries?: { channel: string; status: string; attempts: number; lastAttemptAt: string }[];
+  history?: { requestId: string; action: string; detail: string; officer: string; at: string }[];
 }
 interface Page {
   items: Warning[];
@@ -78,6 +80,16 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [failureChannel, setFailureChannel] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [confirm, setConfirm] = useState<'broadcast' | 'retry' | 'cancel' | null>(null);
+  const [operation, setOperation] = useState<{ id: string; signature: string } | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+  const expired = selected ? new Date(selected.validUntil).getTime() <= now : false;
   const readonly = selected !== null && selected.status !== 'DRAFT';
   async function run(work: () => Promise<void>) {
     setBusy(true);
@@ -93,6 +105,8 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
     }
   }
   function open(warning: Warning) {
+    setOperation(null);
+    setConfirm(null);
     setSelected(warning);
     setForm({
       hazard: warning.hazard,
@@ -109,6 +123,42 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
     setResult(await request<Page>(`/api/dmc/warnings?page=${next}&size=10`, session.accessToken));
     setPage(next);
     setLoaded(true);
+  }
+  async function send() {
+    if (!selected || !confirm) return;
+    if (confirm === 'cancel' && !cancelReason.trim())
+      throw new Error('Provide a cancellation reason.');
+    const signature = JSON.stringify([
+      selected.id,
+      confirm,
+      confirm === 'cancel' ? cancelReason.trim() : failureChannel,
+    ]);
+    if (operation && operation.signature !== signature)
+      throw new Error(
+        'Retry the original values or reload to inspect the previous request before making changes.',
+      );
+    const requestId =
+      operation?.id ||
+      `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+    setOperation({ id: requestId, signature });
+    const body =
+      confirm === 'cancel'
+        ? { requestId, expectedVersion: selected.version, reason: cancelReason.trim() }
+        : { requestId, expectedVersion: selected.version, simulateFailureChannel: failureChannel };
+    const saved = await request<Warning>(
+      `/api/dmc/warnings/${selected.id}/${confirm}`,
+      session.accessToken,
+      'POST',
+      body,
+    );
+    open(saved);
+    setPreview(true);
+    setOperation(null);
+    setMessage(
+      confirm === 'cancel'
+        ? 'Warning cancelled. This cannot recall previously sent alerts.'
+        : 'Simulation recorded. No real notifications were sent.',
+    );
   }
   async function save(showPreview = false) {
     if (
@@ -200,6 +250,8 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                   title="New Warning"
                   disabled={busy}
                   onPress={() => {
+                    setOperation(null);
+                    setConfirm(null);
                     setSelected(null);
                     setForm(blank());
                     setPreview(false);
@@ -264,9 +316,129 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                         onPress={() => setPreview(false)}
                       />
                       <Text style={s.note}>
-                        Broadcasting is added in the next step. This is a saved draft; no recipients
-                        have been notified.
+                        Simulation only: no actual SMS, push notifications, or audible alerts are
+                        sent. Delivery results below represent channel simulations, not recipient
+                        counts.
                       </Text>
+                      {selected && (
+                        <>
+                          <Text style={s.heading}>
+                            Status: {selected.status}
+                            {expired ? ' · EXPIRED' : ''}
+                          </Text>
+                          <Text style={s.heading}>Simulated delivery status</Text>
+                          {(selected.deliveries || []).length === 0 && (
+                            <Text style={s.muted}>Not broadcast yet.</Text>
+                          )}
+                          {(selected.deliveries || []).map((item) => (
+                            <Text key={item.channel} style={s.body}>
+                              {channelNames[item.channel]}: {item.status} · attempts {item.attempts}
+                              {'\n'}
+                              {new Date(item.lastAttemptAt).toLocaleString()}
+                            </Text>
+                          ))}
+                          {selected.status !== 'CANCELLED' && !expired && (
+                            <>
+                              <Text style={s.muted}>
+                                Optional: simulate a channel failure to demonstrate retry.
+                              </Text>
+                              <View style={s.row}>
+                                {[null, ...selected.channels].map((value) => (
+                                  <Pressable
+                                    key={value || 'none'}
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: failureChannel === value }}
+                                    disabled={busy || confirm !== null}
+                                    onPress={() => setFailureChannel(value)}
+                                    style={[
+                                      s.chip,
+                                      failureChannel === value && { backgroundColor: '#D9EAFD' },
+                                    ]}
+                                  >
+                                    <Text style={s.body}>
+                                      {value ? channelNames[value] : 'No failure'}
+                                    </Text>
+                                  </Pressable>
+                                ))}
+                              </View>
+                              <View style={s.row}>
+                                {selected.status === 'DRAFT' ? (
+                                  <Action
+                                    title="Broadcast Warning (Simulation)"
+                                    disabled={busy || !!confirm}
+                                    onPress={() => setConfirm('broadcast')}
+                                  />
+                                ) : (
+                                  <Action
+                                    title="Retry Failed Channels"
+                                    disabled={
+                                      busy ||
+                                      !!confirm ||
+                                      !(selected.deliveries || []).some(
+                                        (item) => item.status === 'FAILED',
+                                      )
+                                    }
+                                    onPress={() => setConfirm('retry')}
+                                  />
+                                )}
+                              </View>
+                            </>
+                          )}
+                          {selected.status === 'ISSUED' && (
+                            <Action
+                              title="Cancel Warning"
+                              disabled={busy || !!confirm}
+                              onPress={() => setConfirm('cancel')}
+                            />
+                          )}
+                          {confirm && (
+                            <View style={{ gap: 12 }}>
+                              <Text style={s.heading}>Confirm {confirm}</Text>
+                              {confirm === 'cancel' && (
+                                <TextInput
+                                  accessibilityLabel="Cancellation reason"
+                                  editable={!busy}
+                                  placeholder="Reason for cancellation"
+                                  value={cancelReason}
+                                  onChangeText={setCancelReason}
+                                  maxLength={500}
+                                  style={s.input}
+                                />
+                              )}
+                              <Text style={s.muted}>
+                                This records an officer action. Broadcasts use a mock adapter and do
+                                not reach real people.
+                              </Text>
+                              <Action
+                                title="Confirm Action"
+                                disabled={busy}
+                                onPress={() => void run(send)}
+                              />
+                              <Action
+                                title="Back"
+                                disabled={busy}
+                                onPress={() => setConfirm(null)}
+                              />
+                            </View>
+                          )}
+                          {operation && (
+                            <Text style={s.note}>
+                              Request pending. Retry with the same input, or reload the saved
+                              warning to inspect its history.
+                            </Text>
+                          )}
+                          <Text style={s.heading}>Warning activity</Text>
+                          {(selected.history || []).map((item) => (
+                            <Text key={item.requestId} style={s.body}>
+                              {item.action} · {item.officer}
+                              {'\n'}
+                              {new Date(item.at).toLocaleString()}
+                              {'\n'}
+                              {item.detail}
+                            </Text>
+                          ))}
+                        </>
+                      )}
                     </>
                   ) : (
                     <>

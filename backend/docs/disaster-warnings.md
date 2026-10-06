@@ -14,3 +14,13 @@ Open Disaster Warnings from Home, log in, compose, save and preview. Access and 
 
 Manual commit: `feat: add warning composition and preview workflow`
 Next: step 4 broadcast simulation and delivery status on frontend/backend; keep Git author Anuja.
+
+## Step 4 — simulated broadcast and delivery tracking (Anuja)
+
+Saved preview offers Broadcast Warning (Simulation), channel failure simulation, failed-channel retry, cancellation, and actor/time history. Real SMS/push/audible providers and recipient counts are intentionally not configured. SIMULATED_SENT is a channel outcome, not proof a person received a warning.
+
+POST `/{id}/broadcast` or `/{id}/retry`: `{"requestId":"unique-id","expectedVersion":0,"simulateFailureChannel":null}`. Set failure channel to one selected channel to record FAILED. Retry only repeats failed channels. Expired/cancelled warnings cannot broadcast/retry. POST `/{id}/cancel`: `{"requestId":"unique-id","expectedVersion":1,"reason":"Conditions have improved"}`. Cancellation cannot recall delivered messages.
+
+Issue, channel outcomes and append-only action history save in one versioned MongoDB document. Request IDs provide replay protection; same action/payload returns the saved document, changed payload conflicts. Unknown write failures keep the browser request ID for retry; reload/history inspection precedes a new action. Draft fields remain editable only before issue. Expiry is derived from validUntil (no background timer or mutable EXPIRED status). Old drafts default new fields to empty lists.
+
+Compilation/type/lint checks only; no automated tests at user request and no real notifications/database mutations run during implementation. Manual commit: `feat: add simulated warning broadcasts and delivery tracking`. Next step 5: rescue incidents/team management in frontend/backend; switch Git author to Sanuk.
