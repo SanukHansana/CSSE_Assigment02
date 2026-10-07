@@ -102,3 +102,9 @@ The stale second-commit message and empty-string JSX location condition were cor
 Browser UI checks with fictional, isolated accounts confirmed the full-width navigation, inline Admin confirmation, DMC Officer dashboard, and login persistence across workspaces. No live MongoDB accounts were used.
 
 The browser preview also confirmed OpenStreetMap tiles render and clicking the map fills coordinates without the previous text-node error. Native map behavior and real database writes remain unverified; the preview used only fictional local responses.
+
+## Community personal-resource support and tests
+
+Citizens now post essential-supply needs through **My Needs**. Community Volunteers browse **Community Support**, offer their own resources and mark accepted offers delivered. Citizens confirm receipt; full confirmed quantity closes the need as fulfilled. Official DMC inventory remains separate. See [the flow and API guide](../backend/docs/community-support.md).
+
+Run `npm run test:coverage` for the whole frontend's line/branch gates. Run `npm run check` for types, lint and formatting. [Coverage scope and results](../backend/docs/test-coverage.md) include both applications separately.

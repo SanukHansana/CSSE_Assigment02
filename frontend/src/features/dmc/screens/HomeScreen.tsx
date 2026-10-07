@@ -106,6 +106,16 @@ export function HomeScreen() {
               </View>
             ))}
           </View>
+          <View style={[styles.feature, styles.activeFeature]}>
+            <Text style={styles.cardTitle}>Community support</Text>
+            <Text style={styles.cardBody}>
+              Citizens can request essential supplies, and community volunteers can offer their
+              personal resources.
+            </Text>
+            <Link href="/community" style={styles.cardLink}>
+              Open needs board →
+            </Link>
+          </View>
           <View style={styles.footer}>
             <Link href="/admin" style={styles.connection}>
               Admin verification →
