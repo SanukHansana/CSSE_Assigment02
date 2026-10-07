@@ -44,3 +44,6 @@ yarn-error.*
 .env
 .env.*
 !.env.example
+
+# Generated test reports
+coverage/

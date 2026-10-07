@@ -58,11 +58,8 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.14</version>
                 <configuration>
-                    <!-- Measure the selected use case, including its HTTP/DTO/model code. -->
-                    <includes>
-                        <include>com/dmc/backend/models/hazard/**</include>
-                        <include>com/dmc/backend/reporting/**</include>
-                    </includes>
+                    <!-- Measure the entire backend, including all application modules. -->
+                    <includes><include>com/dmc/backend/**</include></includes>
                 </configuration>
                 <executions>
                     <execution>
@@ -78,7 +75,8 @@
                                 <rule>
                                     <element>BUNDLE</element>
                                     <limits>
-                                        <limit><counter>LINE</counter><value>COVEREDRATIO</value><minimum>0.80</minimum></limit>
+                                        <limit><counter>LINE</counter><value>COVEREDRATIO</value><minimum>0.81</minimum></limit>
+                                        <limit><counter>BRANCH</counter><value>COVEREDRATIO</value><minimum>0.81</minimum></limit>
                                     </limits>
                                 </rule>
                             </rules>

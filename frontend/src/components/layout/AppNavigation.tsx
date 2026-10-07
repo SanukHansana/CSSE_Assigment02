@@ -7,13 +7,18 @@ export function AppNavigation() {
   const path = usePathname();
   const roles = session?.user.roles || [];
   const links: {
-    href: '/' | '/ground-reports' | '/relief' | '/warnings' | '/rescue' | '/admin';
+    href: '/' | '/ground-reports' | '/relief' | '/warnings' | '/rescue' | '/admin' | '/community';
     title: string;
   }[] = [{ href: '/', title: 'Home' }];
   if (roles.some((role) => ['CITIZEN', 'COMMUNITY_VOLUNTEER', 'DUTY_OFFICER'].includes(role)))
     links.push({
       href: '/ground-reports',
       title: roles.includes('DUTY_OFFICER') ? 'Review Reports' : 'Ground Reports',
+    });
+  if (roles.some((role) => ['CITIZEN', 'COMMUNITY_VOLUNTEER'].includes(role)))
+    links.push({
+      href: '/community',
+      title: roles.includes('COMMUNITY_VOLUNTEER') ? 'Community Support' : 'My Needs',
     });
   if (roles.includes('DMC_OFFICER'))
     links.push(

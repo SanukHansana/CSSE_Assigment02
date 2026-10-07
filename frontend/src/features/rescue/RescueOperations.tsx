@@ -275,7 +275,7 @@ export function RescueOperations({
           disabled={busy}
           onPress={() => void run(() => perform('close'))}
         />
-      )}{' '}
+      )}
       {incident.status === 'CLOSED' && (
         <Text style={s.success}>✓ Incident closed. All required rescue operations have ended.</Text>
       )}

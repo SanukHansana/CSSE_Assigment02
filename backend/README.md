@@ -128,3 +128,9 @@ Completed locally queued reports can be accepted through duplicate-safe synchron
 The five backend stages are complete. See the [final integration and validation guide](docs/ground-hazard-report-integration.md) for screenshot-to-endpoint mapping, remaining frontend work, design improvements, and honest test limits. `./mvnw clean verify` runs tests, builds the executable JAR, generates `target/site/jacoco/index.html`, and checks at least 80% line coverage for hazard-report models/reporting code. The final Stage 5 run passed 129 tests with 98.05% line coverage and 76.76% branch coverage. These are backend execution metrics, not live database or frontend verification.
 
 [Fictional development fixtures](dev-fixtures/README.md) generate local demo accounts/reports/photo files through a test; optional import is restricted to `dmc_demo` and must be run explicitly. No live database import was performed.
+
+## Community personal-resource support
+
+The Citizen/Community Volunteer support board is implemented in the `community` module. It uses one versioned MongoDB document per need with embedded offers/history. See [flow and API examples](docs/community-support.md).
+
+`./mvnw clean verify` now measures the entire backend with line/branch gates, including relief, warnings, rescue, approval and community support. [Test scope and measured results](docs/test-coverage.md) supersede the earlier reporting-only coverage.
