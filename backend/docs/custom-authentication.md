@@ -1,3 +1,7 @@
+# Updated registration policy
+
+See [registration and admin approval](account-registration-and-approval.md) for the current role selection, no 12-character minimum, officer approval and MongoDB-only Admin setup. Earlier Citizen-only statements below describe the original foundation.
+
 # Custom JWT authentication prerequisite
 
 This is the separately authorized authentication module, preceding ground-report Stage 2. No ground-reporting endpoints or frontend login screens are implemented in this change.
@@ -42,7 +46,7 @@ Registration request:
 }
 ```
 
-Registration returns 201 with `id`, normalized lowercase `email`, `displayName`, and `roles: ["CITIZEN"]`. It does not log the user in automatically. The password must contain 12–72 UTF-16 code units and at most 72 UTF-8 bytes (bcrypt's limit). Passwords are hashed with bcrypt cost 12 and are never trimmed. Names are trimmed. Email uniqueness is enforced by MongoDB, including races; duplicates return 409 `ACCOUNT_ALREADY_EXISTS`.
+Registration returns 201 with `id`, normalized lowercase `email`, `displayName`, and `roles: ["CITIZEN"]`. It does not log the user in automatically. The password must be nonblank and contain at most 72 UTF-16 code units and at most 72 UTF-8 bytes (bcrypt's limit). Passwords are hashed with bcrypt cost 12 and are never trimmed. Names are trimmed. Email uniqueness is enforced by MongoDB, including races; duplicates return 409 `ACCOUNT_ALREADY_EXISTS`.
 
 Login request:
 

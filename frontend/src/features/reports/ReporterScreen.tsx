@@ -1,3 +1,8 @@
+import { MapPicker } from '../../components/maps/MapPicker';
+import { Action } from '../../components/ui/Action';
+import { useAuth } from '../../application/AuthContext';
+import { DmcDashboard } from '../dmc/screens/DmcDashboard';
+import { AdminScreen } from '../admin/AdminScreen';
 import { RescueScreen } from '../rescue/RescueScreen';
 import { WarningScreen } from '../warnings/WarningScreen';
 import { ReliefScreen } from '../relief/ReliefScreen';
@@ -26,33 +31,7 @@ import { env } from '../../config/env';
 const base = '/api/dmc/ground-reports';
 const hazards = ['FLOODING', 'RISING_RIVER_LEVEL', 'BLOCKED_ROAD', 'LANDSLIDE_CRACK'];
 const label = (value: string) => value.toLowerCase().replaceAll('_', ' ');
-function Action({
-  title,
-  onPress,
-  disabled = false,
-  secondary = false,
-}: {
-  title: string;
-  onPress: () => void;
-  disabled?: boolean;
-  secondary?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={disabled}
-      accessibilityState={{ disabled }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        s.button,
-        secondary && s.secondary,
-        (disabled || pressed) && { opacity: 0.5 },
-      ]}
-    >
-      <Text style={[s.buttonText, secondary && s.secondaryText]}>{title}</Text>
-    </Pressable>
-  );
-}
+
 function Field({
   title,
   value,
@@ -89,12 +68,15 @@ function Field({
 }
 export function ReporterScreen({
   workspace = 'reports',
+  authMode = 'login',
 }: {
-  workspace?: 'reports' | 'relief' | 'warnings' | 'rescue';
+  workspace?: 'reports' | 'relief' | 'warnings' | 'rescue' | 'admin';
+  authMode?: 'login' | 'register';
 }) {
   const wide = useWindowDimensions().width >= 900;
-  const [session, setSession] = useState<Session | null>(null);
-  const [register, setRegister] = useState(false);
+  const { session, setSession } = useAuth();
+  const [register, setRegister] = useState(authMode === 'register');
+  const [requestedRole, setRequestedRole] = useState('CITIZEN');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -207,10 +189,15 @@ export function ReporterScreen({
         email,
         displayName: name,
         password,
+        requestedRole,
       });
       setRegister(false);
       setPassword('');
-      setMessage('Account created. Sign in with your email and password.');
+      setMessage(
+        ['DUTY_OFFICER', 'DMC_OFFICER'].includes(requestedRole)
+          ? 'Officer application created. Sign in to check admin approval status.'
+          : 'Account created. Sign in with your email and password.',
+      );
       return;
     }
     const result = await request<Session>('/api/dmc/auth/login', undefined, 'POST', {
@@ -297,6 +284,67 @@ export function ReporterScreen({
     setMessage('Draft saved. Review the details below, then confirm submission.');
   }
 
+  if (session && ['PENDING', 'REJECTED'].includes(session.user.approvalStatus || '')) {
+    return (
+      <SafeAreaView style={s.root}>
+        <ScrollView contentContainerStyle={s.content}>
+          <Link href="/" style={s.link}>
+            ← Home
+          </Link>
+          <Text style={s.title}>Officer Application</Text>
+          <View style={s.card}>
+            <Text style={s.heading}>{session.user.displayName}</Text>
+            <Text style={s.body}>
+              Requested role: {session.user.requestedRole?.replaceAll('_', ' ')}
+            </Text>
+            <Text style={s.note}>
+              Status: {session.user.approvalStatus}. Officer functions are unavailable until an
+              administrator approves your account.
+            </Text>
+            {Boolean(session.user.approvalNote) && (
+              <Text style={s.body}>Admin note: {session.user.approvalNote}</Text>
+            )}
+            <Action
+              title="Refresh Approval Status"
+              disabled={busy}
+              onPress={() =>
+                void run(async () => {
+                  const user = await request<Session['user']>(
+                    '/api/dmc/auth/me',
+                    session.accessToken,
+                  );
+                  setSession({ ...session, user });
+                })
+              }
+            />
+          </View>
+          {error ? <Text style={s.error}>{error}</Text> : null}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+  if (session?.user.roles.includes('ADMIN'))
+    return (
+      <AdminScreen
+        session={session}
+        onSignOut={() => {
+          setSession(null);
+          newReport();
+        }}
+      />
+    );
+  if (session && workspace === 'admin')
+    return (
+      <SafeAreaView style={s.root}>
+        <View style={s.content}>
+          <Link href="/" style={s.link}>
+            ← Home
+          </Link>
+          <Text style={s.title}>Admin access required</Text>
+          <Text style={s.body}>This account does not have the Admin role.</Text>
+        </View>
+      </SafeAreaView>
+    );
   if (session && workspace === 'rescue')
     return (
       <RescueScreen
@@ -328,6 +376,7 @@ export function ReporterScreen({
       />
     );
   }
+  if (session?.user.roles.includes('DMC_OFFICER') && !reporterRole) return <DmcDashboard />;
   if (session?.user.roles.includes('DUTY_OFFICER')) {
     return (
       <OfficerScreen
@@ -343,18 +392,6 @@ export function ReporterScreen({
   return (
     <SafeAreaView style={s.root}>
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        <View style={s.header}>
-          <Link href="/" style={s.brand}>
-            ◈ DMC <Text style={s.brandSub}>Disaster Reporting Portal</Text>
-          </Link>
-          <Text style={s.headerText}>
-            {session
-              ? session.user.displayName
-              : workspace === 'relief'
-                ? 'Relief coordination'
-                : 'Ground reporting'}
-          </Text>
-        </View>
         <View style={s.content}>
           <View style={s.navigation}>
             <Link href="/" style={s.link}>
@@ -362,24 +399,14 @@ export function ReporterScreen({
             </Link>
             <Text style={s.muted}>
               /{' '}
-              {workspace === 'warnings'
-                ? 'Disaster Warnings'
-                : workspace === 'relief'
-                  ? 'Relief Resources & Shelters'
-                  : 'Ground Hazard Reports'}
+              {!session
+                ? 'Account access'
+                : workspace === 'warnings'
+                  ? 'Disaster Warnings'
+                  : workspace === 'relief'
+                    ? 'Relief Resources & Shelters'
+                    : 'Ground Hazard Reports'}
             </Text>
-            {session && (
-              <Action
-                title="Sign out"
-                secondary
-                disabled={busy}
-                onPress={() => {
-                  setSession(null);
-                  newReport();
-                  setReports({ items: [], totalPages: 0 });
-                }}
-              />
-            )}
           </View>
           <Text accessibilityRole="header" style={s.title}>
             {!session
@@ -409,12 +436,37 @@ export function ReporterScreen({
           ) : null}
           {!session ? (
             <View style={[s.card, s.auth]}>
-              {register && <Field title="Full name" value={name} onChange={setName} limit={100} />}
+              {register && (
+                <>
+                  <Field title="Full name" value={name} onChange={setName} limit={100} />
+                  <Text style={s.label}>Account type</Text>
+                  <View style={s.actions}>
+                    {['CITIZEN', 'COMMUNITY_VOLUNTEER', 'DUTY_OFFICER', 'DMC_OFFICER'].map(
+                      (role) => (
+                        <Pressable
+                          key={role}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: requestedRole === role }}
+                          disabled={busy}
+                          onPress={() => setRequestedRole(role)}
+                          style={[s.chip, requestedRole === role && s.selected]}
+                        >
+                          <Text style={requestedRole === role ? s.selectedText : s.muted}>
+                            {role.replaceAll('_', ' ')}
+                          </Text>
+                        </Pressable>
+                      ),
+                    )}
+                  </View>
+                </>
+              )}
               <Field title="Email" value={email} onChange={setEmail} />
               <Field title="Password" value={password} onChange={setPassword} password />
               {register && (
                 <Text style={s.muted}>
-                  Use a password with 12–72 characters. Registration creates a citizen account.
+                  No 12-character minimum. Passwords must be nonblank and fit within 72 UTF-8 bytes.
+                  Citizens and volunteers get immediate access; officer applications require admin
+                  approval.
                 </Text>
               )}
               <Action
@@ -437,8 +489,8 @@ export function ReporterScreen({
             <View style={s.card}>
               <Text style={s.heading}>Officer account</Text>
               <Text style={s.muted}>
-                Citizen and volunteer accounts submit reports. The Duty Officer review workspace
-                will be added in the second commit.
+                This workspace is for citizens and community volunteers. Use the navigation above to
+                open the workspaces available to your role.
               </Text>
             </View>
           ) : (
@@ -553,7 +605,7 @@ export function ReporterScreen({
                       </View>
                       <View style={s.card}>
                         <Text style={s.heading}>Photo evidence *</Text>
-                        {(photo?.uri || savedPhotoUri) && (
+                        {Boolean(photo?.uri || savedPhotoUri) && (
                           <Image
                             accessibilityLabel="Hazard photo evidence"
                             source={{
@@ -608,6 +660,16 @@ export function ReporterScreen({
                     <View style={s.sideColumn}>
                       <View style={s.card}>
                         <Text style={s.heading}>Hazard location *</Text>
+                        <MapPicker
+                          latitude={latitude}
+                          longitude={longitude}
+                          disabled={busy || readonly || confirm}
+                          onSelect={(lat, lon) => {
+                            setLatitude(lat.toFixed(6));
+                            setLongitude(lon.toFixed(6));
+                            setConfirm(false);
+                          }}
+                        />
                         {readonly || confirm ? (
                           <Text style={s.body}>
                             {latitude}, {longitude}
@@ -645,7 +707,7 @@ export function ReporterScreen({
                         <Text style={s.muted}>
                           Use the hazard location. If GPS fails, the previous coordinates are kept.
                         </Text>
-                        {latitude && longitude && (
+                        {Boolean(latitude && longitude) && (
                           <Action
                             title="Open location in map"
                             secondary
@@ -755,7 +817,7 @@ export function ReporterScreen({
   );
 }
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5F7FB' },
+  root: { flex: 1, backgroundColor: '#F3F6F8' },
   scroll: { flexGrow: 1 },
   header: {
     backgroundColor: '#06234D',
@@ -772,13 +834,13 @@ const s = StyleSheet.create({
   content: { padding: 24, gap: 20, width: '100%', maxWidth: 1250, alignSelf: 'center' },
   navigation: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 14 },
   title: { fontSize: 30, fontWeight: '700', color: '#09274F' },
-  link: { color: '#005BEA', fontSize: 15 },
+  link: { color: '#087F70', fontSize: 15 },
   muted: { fontSize: 14, lineHeight: 22, color: '#52647B' },
   body: { fontSize: 16, lineHeight: 25, color: '#253B56' },
   card: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DFE5EF',
+    borderColor: '#DFE7ED',
     borderRadius: 14,
     padding: 22,
     gap: 16,
@@ -799,7 +861,7 @@ const s = StyleSheet.create({
   },
   multiline: { minHeight: 135, textAlignVertical: 'top' },
   button: {
-    backgroundColor: '#005BEA',
+    backgroundColor: '#087F70',
     padding: 14,
     borderRadius: 8,
     minHeight: 48,
@@ -808,7 +870,7 @@ const s = StyleSheet.create({
   },
   buttonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 15 },
   secondary: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CBD5E1' },
-  secondaryText: { color: '#005BEA' },
+  secondaryText: { color: '#087F70' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, alignItems: 'center' },
   columns: { gap: 20 },
   mainColumn: { flex: 2, gap: 20 },
@@ -820,7 +882,7 @@ const s = StyleSheet.create({
     minHeight: 44,
     justifyContent: 'center',
   },
-  selected: { backgroundColor: '#005BEA' },
+  selected: { backgroundColor: '#087F70' },
   selectedText: { color: '#FFFFFF', fontSize: 14 },
   counter: { textAlign: 'right', color: '#64748B', fontSize: 12 },
   photo: { width: '100%', height: 220, borderRadius: 8 },
@@ -855,7 +917,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   status: {
-    color: '#005BEA',
+    color: '#087F70',
     backgroundColor: '#EDF4FF',
     padding: 8,
     borderRadius: 8,

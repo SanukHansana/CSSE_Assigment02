@@ -77,7 +77,7 @@ class DevelopmentFixturesTest {
     }
     private UserAccount account(String suffix,AccountRole role,String hash,Instant now) {
         return new UserAccount("demo-"+suffix,suffix+"@dmc.example.test","Demo "+switch(role){
-            case CITIZEN->"Citizen";case COMMUNITY_VOLUNTEER->"Community Volunteer";case DUTY_OFFICER->"Duty Officer";case DMC_OFFICER->"DMC Officer";},hash,Set.of(role),true,now);
+            case CITIZEN->"Citizen";case COMMUNITY_VOLUNTEER->"Community Volunteer";case DUTY_OFFICER->"Duty Officer";case DMC_OFFICER->"DMC Officer";case ADMIN->"Admin";},hash,Set.of(role),true,now);
     }
     private byte[] demoImage() throws Exception {
         BufferedImage image=new BufferedImage(400,200,BufferedImage.TYPE_INT_RGB);Graphics2D graphics=image.createGraphics();

@@ -1,28 +1,10 @@
+import { MapPicker } from '../../components/maps/MapPicker';
+import { Action } from '../../components/ui/Action';
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, StyleSheet, Text, TextInput, View } from 'react-native';
 import { request } from '../reports/api';
 import type { Incident, Team } from './RescueScreen';
-function Action({
-  title,
-  onPress,
-  disabled = false,
-}: {
-  title: string;
-  onPress: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [s.button, (disabled || pressed) && { opacity: 0.5 }]}
-    >
-      <Text style={s.buttonText}>{title}</Text>
-    </Pressable>
-  );
-}
+
 export function RescueOperations({
   incident,
   token,
@@ -236,6 +218,15 @@ export function RescueOperations({
           <Text style={s.muted}>
             Optional last-confirmed team location for the next progress update:
           </Text>
+          <MapPicker
+            latitude={latitude}
+            longitude={longitude}
+            disabled={busy}
+            onSelect={(lat, lon) => {
+              setLatitude(lat.toFixed(6));
+              setLongitude(lon.toFixed(6));
+            }}
+          />
           <TextInput
             accessibilityLabel="Team location address"
             placeholder="Team location"
@@ -305,7 +296,7 @@ export function RescueOperations({
   );
 }
 const s = StyleSheet.create({
-  panel: { gap: 16, borderTopWidth: 1, borderTopColor: '#DFE5EF', paddingTop: 20 },
+  panel: { gap: 16, borderTopWidth: 1, borderTopColor: '#DFE7ED', paddingTop: 20 },
   heading: { fontSize: 18, fontWeight: '700', color: '#09274F' },
   body: { fontSize: 15, color: '#253B56', lineHeight: 24 },
   muted: { fontSize: 14, color: '#52647B', lineHeight: 22 },
@@ -324,7 +315,7 @@ const s = StyleSheet.create({
     lineHeight: 22,
   },
   button: {
-    backgroundColor: '#005BEA',
+    backgroundColor: '#087F70',
     padding: 14,
     minHeight: 48,
     borderRadius: 8,
@@ -333,7 +324,7 @@ const s = StyleSheet.create({
   },
   buttonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  team: { gap: 12, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#DFE5EF' },
+  team: { gap: 12, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#DFE7ED' },
   input: {
     borderWidth: 1,
     borderColor: '#CBD5E1',

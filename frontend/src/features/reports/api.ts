@@ -6,6 +6,10 @@ export interface Account {
   id?: string;
   displayName: string;
   roles: string[];
+  email?: string;
+  requestedRole?: string;
+  approvalStatus?: string;
+  approvalNote?: string;
 }
 export interface Session {
   accessToken: string;

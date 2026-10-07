@@ -45,6 +45,9 @@ public class AuthService {
 
     public AuthContracts.UserResponse register(AuthContracts.RegisterRequest request) {
         checkPasswordBytes(request.password());
+        AccountRole role=request.requestedRole()==null ? AccountRole.CITIZEN : request.requestedRole();
+        if (role==AccountRole.ADMIN) throw new AuthException(BAD_REQUEST,"INVALID_REGISTRATION_ROLE","Admin accounts can only be configured through database administration.");
+        boolean pending=role==AccountRole.DUTY_OFFICER || role==AccountRole.DMC_OFFICER;
         if (request.displayName().isBlank()) {
             throw new AuthException(BAD_REQUEST, "INVALID_DISPLAY_NAME", "Provide a display name.");
         }
@@ -54,7 +57,7 @@ public class AuthService {
                 .unique().named("uq_user_email"));
         UserAccount account = new UserAccount(UUID.randomUUID().toString(), normalizeEmail(request.email()),
                 request.displayName().strip(), passwords.encode(request.password()),
-                Set.of(AccountRole.CITIZEN), true, clock.instant());
+                Set.of(role), true, clock.instant(), role, pending ? "PENDING" : "APPROVED", null, null, null);
         try {
             return AuthContracts.UserResponse.from(users.insert(account));
         } catch (DuplicateKeyException exception) {
