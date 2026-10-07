@@ -4,6 +4,7 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/metro-runtime": "~57.0.16",
+    "@types/leaflet": "^1.9.22",
     "expo": "~57.0.27",
     "expo-constants": "~57.0.21",
     "expo-image-picker": "~57.0.20",
@@ -11,12 +12,14 @@
     "expo-location": "~57.0.20",
     "expo-router": "~57.0.25",
     "expo-status-bar": "~57.0.1",
+    "leaflet": "1.9.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
-    "react-native-web": "^0.21.2"
+    "react-native-web": "^0.21.2",
+    "react-native-webview": "13.16.1"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",

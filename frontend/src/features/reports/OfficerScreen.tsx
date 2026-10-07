@@ -1,3 +1,4 @@
+import { Action } from '../../components/ui/Action';
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -31,33 +32,7 @@ const checks: [keyof Checklist, string][] = [
   ['reportingTimeReasonable', 'Reporting time is reasonable'],
 ];
 const label = (value: string) => value.replaceAll('_', ' ');
-function Action({
-  title,
-  onPress,
-  disabled = false,
-  danger = false,
-}: {
-  title: string;
-  onPress: () => void;
-  disabled?: boolean;
-  danger?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        s.button,
-        danger && { backgroundColor: '#B42318' },
-        (disabled || pressed) && { opacity: 0.5 },
-      ]}
-    >
-      <Text style={s.buttonText}>{title}</Text>
-    </Pressable>
-  );
-}
+
 export function OfficerScreen({ session, onSignOut }: { session: Session; onSignOut: () => void }) {
   const wide = useWindowDimensions().width >= 900;
   const [report, setReport] = useState<Report | null>(null);
@@ -192,7 +167,6 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
               DMC / Ground Reports
             </Link>
             <Text style={s.muted}>{session.user.displayName} · Duty Officer</Text>
-            <Action title="Sign out" disabled={busy} onPress={onSignOut} />
           </View>
           <Text accessibilityRole="header" style={s.title}>
             {report ? 'Ground Hazard Report' : 'Ground Reports Review Queue'}
@@ -230,7 +204,7 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
                       setStatus(value);
                       setLoaded(false);
                     }}
-                    style={[s.chip, status === value && { backgroundColor: '#005BEA' }]}
+                    style={[s.chip, status === value && { backgroundColor: '#087F70' }]}
                   >
                     <Text style={{ color: status === value ? '#FFFFFF' : '#52647B' }}>
                       {label(value)}
@@ -561,7 +535,7 @@ export function OfficerScreen({ session, onSignOut }: { session: Session; onSign
   );
 }
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5F7FB' },
+  root: { flex: 1, backgroundColor: '#F3F6F8' },
   shell: { flex: 1 },
   sidebar: { width: 240, backgroundColor: '#06234D', padding: 22, gap: 24 },
   brand: { color: '#FFFFFF', fontSize: 28, fontWeight: '700' },
@@ -570,7 +544,7 @@ const s = StyleSheet.create({
   activeNav: {
     color: '#FFFFFF',
     fontSize: 16,
-    backgroundColor: '#005BEA',
+    backgroundColor: '#087F70',
     padding: 16,
     borderRadius: 10,
   },
@@ -582,12 +556,12 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  link: { color: '#005BEA', fontSize: 14 },
+  link: { color: '#087F70', fontSize: 14 },
   title: { color: '#09274F', fontSize: 30, fontWeight: '700' },
   card: {
     padding: 20,
     borderWidth: 1,
-    borderColor: '#DFE5EF',
+    borderColor: '#DFE7ED',
     borderRadius: 14,
     backgroundColor: '#FFFFFF',
     gap: 16,
@@ -608,7 +582,7 @@ const s = StyleSheet.create({
     padding: 14,
     minHeight: 48,
     borderRadius: 8,
-    backgroundColor: '#005BEA',
+    backgroundColor: '#087F70',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -622,7 +596,7 @@ const s = StyleSheet.create({
     gap: 12,
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#DFE5EF',
+    borderBottomColor: '#DFE7ED',
   },
   columns: { gap: 20 },
   main: { flex: 3, gap: 20 },
@@ -631,7 +605,7 @@ const s = StyleSheet.create({
   badge: {
     padding: 8,
     borderRadius: 8,
-    color: '#005BEA',
+    color: '#087F70',
     backgroundColor: '#EDF4FF',
     fontSize: 13,
   },

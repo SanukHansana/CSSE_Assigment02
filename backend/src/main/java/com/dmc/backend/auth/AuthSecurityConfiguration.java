@@ -106,7 +106,7 @@ public class AuthSecurityConfiguration {
                             } catch (DataAccessException exception) {
                                 throw new OAuth2AuthenticationException(new OAuth2Error("server_error"));
                             }
-                            var authorities = account.roles().stream()
+                            var authorities = account.effectiveRoles().stream()
                                     .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name())).toList();
                             return new JwtAuthenticationToken(token, authorities, account.id());
                         })));

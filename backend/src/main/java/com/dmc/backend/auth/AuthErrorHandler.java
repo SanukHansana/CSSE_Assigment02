@@ -9,7 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice(assignableTypes = AuthController.class)
+@RestControllerAdvice(assignableTypes = {AuthController.class, AdminController.class})
 public class AuthErrorHandler {
     public record FieldError(String field, String message) { }
     public record ErrorResponse(String code, String message, List<FieldError> fieldErrors) { }

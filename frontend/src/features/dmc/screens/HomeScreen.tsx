@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const planned = [
@@ -25,23 +25,6 @@ export function HomeScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <View style={styles.brand}>
-            <View style={styles.logo}>
-              <Text style={styles.logoText}>D</Text>
-            </View>
-            <View>
-              <Text style={styles.brandName}>DMC</Text>
-              <Text style={styles.brandSub}>Disaster Reporting Portal</Text>
-            </View>
-          </View>
-          <View style={styles.nav}>
-            <Text style={styles.currentNav}>Home</Text>
-            <Link href="/ground-reports" style={styles.navLink}>
-              Ground Reports
-            </Link>
-          </View>
-        </View>
         <View style={styles.content}>
           <View style={[styles.hero, wide && styles.heroWide]}>
             <View style={styles.heroCopy}>
@@ -56,13 +39,8 @@ export function HomeScreen() {
                 Report what you observe and help officers build a clearer picture of conditions on
                 the ground.
               </Text>
-              <Link href="/ground-reports" asChild>
-                <Pressable
-                  accessibilityRole="link"
-                  style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
-                >
-                  <Text style={styles.primaryText}>Open ground reports →</Text>
-                </Pressable>
+              <Link href="/ground-reports" style={[styles.primary, styles.primaryText]}>
+                Open ground reports →
               </Link>
             </View>
             <View style={styles.heroPanel}>
@@ -129,6 +107,9 @@ export function HomeScreen() {
             ))}
           </View>
           <View style={styles.footer}>
+            <Link href="/admin" style={styles.connection}>
+              Admin verification →
+            </Link>
             <Text style={styles.footerText}>DMC · Disaster Reporting Portal</Text>
             <Link href="/connection" style={styles.connection}>
               Check service connection →
@@ -140,7 +121,7 @@ export function HomeScreen() {
   );
 }
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5F7FB' },
+  root: { flex: 1, backgroundColor: '#F3F6F8' },
   scroll: { flexGrow: 1 },
   header: {
     backgroundColor: '#06234D',
@@ -172,12 +153,12 @@ const styles = StyleSheet.create({
   hero: { backgroundColor: '#EAF1FB', borderRadius: 24, padding: 24, gap: 28 },
   heroWide: { flexDirection: 'row', padding: 40 },
   heroCopy: { flex: 1, gap: 20 },
-  eyebrow: { color: '#005BEA', fontSize: 12, letterSpacing: 1.5, fontWeight: '700' },
+  eyebrow: { color: '#087F70', fontSize: 12, letterSpacing: 1.5, fontWeight: '700' },
   heroTitle: { fontSize: 32, lineHeight: 40, fontWeight: '800', color: '#09274F' },
   heroTitleWide: { fontSize: 44, lineHeight: 53 },
   heroBody: { color: '#52647B', fontSize: 17, lineHeight: 27, maxWidth: 480 },
   primary: {
-    backgroundColor: '#005BEA',
+    backgroundColor: '#087F70',
     borderRadius: 10,
     paddingHorizontal: 22,
     paddingVertical: 17,
@@ -213,14 +194,14 @@ const styles = StyleSheet.create({
     gap: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#DFE5EF',
+    borderColor: '#DFE7ED',
   },
   half: { width: '48%' },
   activeFeature: { borderColor: '#9CBFFA' },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
   cardNumber: { color: '#52647B', fontSize: 18, fontWeight: '700' },
   badge: {
-    color: '#005BEA',
+    color: '#087F70',
     backgroundColor: '#EDF4FF',
     padding: 7,
     fontSize: 10,
@@ -237,7 +218,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: { color: '#09274F', fontSize: 21, lineHeight: 29, fontWeight: '700' },
   cardBody: { color: '#52647B', fontSize: 15, lineHeight: 24 },
-  cardLink: { color: '#005BEA', fontSize: 15, fontWeight: '700', paddingVertical: 8 },
+  cardLink: { color: '#087F70', fontSize: 15, fontWeight: '700', paddingVertical: 8 },
   comingSoon: { color: '#64748B', fontSize: 14, paddingVertical: 8 },
   footer: {
     flexDirection: 'row',
@@ -247,5 +228,5 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   footerText: { color: '#64748B', fontSize: 13 },
-  connection: { color: '#005BEA', fontSize: 13, paddingVertical: 4 },
+  connection: { color: '#087F70', fontSize: 13, paddingVertical: 4 },
 });

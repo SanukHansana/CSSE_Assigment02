@@ -1,3 +1,4 @@
+import { Action } from '../../components/ui/Action';
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -48,27 +49,7 @@ const channelNames: Record<string, string> = {
   PUSH_NOTIFICATION: 'Push notification',
   AUDIBLE_ALERT: 'Audible alert',
 };
-function Action({
-  title,
-  onPress,
-  disabled = false,
-}: {
-  title: string;
-  onPress: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [s.button, (pressed || disabled) && { opacity: 0.5 }]}
-    >
-      <Text style={s.buttonText}>{title}</Text>
-    </Pressable>
-  );
-}
+
 export function WarningScreen({ session, onSignOut }: { session: Session; onSignOut: () => void }) {
   const wide = useWindowDimensions().width >= 900;
   const [form, setForm] = useState(blank);
@@ -225,7 +206,6 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
               ← Home
             </Link>
             <Text style={s.muted}>{session.user.displayName}</Text>
-            <Action title="Sign out" disabled={busy} onPress={onSignOut} />
           </View>
           <Text accessibilityRole="header" style={s.title}>
             {preview ? 'Preview Warning' : 'Compose Warning'}
@@ -526,7 +506,8 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
                       </View>
                       <Text style={s.note}>
                         Warnings are prepared by an officer. Ground reports do not automatically
-                        issue warnings. Channel delivery is not implemented in this step.
+                        issue warnings. Channel delivery is simulated; no real notifications are
+                        sent.
                       </Text>
                     </>
                   )}
@@ -586,30 +567,30 @@ export function WarningScreen({ session, onSignOut }: { session: Session; onSign
   );
 }
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F5F7FB' },
+  root: { flex: 1, backgroundColor: '#F3F6F8' },
   shell: { flex: 1 },
   sidebar: { width: 230, backgroundColor: '#06234D', padding: 22, gap: 24 },
   brand: { fontSize: 28, fontWeight: '700', color: '#FFFFFF' },
   light: { color: '#C5D9EF', lineHeight: 24 },
   nav: { color: '#FFFFFF', fontSize: 16, paddingVertical: 14 },
-  active: { color: '#FFFFFF', backgroundColor: '#005BEA', padding: 16, borderRadius: 8 },
+  active: { color: '#FFFFFF', backgroundColor: '#087F70', padding: 16, borderRadius: 8 },
   content: { padding: 24, gap: 20, width: '100%', maxWidth: 1300, alignSelf: 'center' },
   title: { fontSize: 28, fontWeight: '700', color: '#09274F' },
   heading: { fontSize: 19, fontWeight: '700', color: '#09274F' },
   body: { color: '#253B56', fontSize: 15, lineHeight: 24 },
   muted: { color: '#52647B', fontSize: 14, lineHeight: 22 },
-  link: { color: '#005BEA', fontSize: 15 },
+  link: { color: '#087F70', fontSize: 15 },
   row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
   columns: { gap: 20 },
   card: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DFE5EF',
+    borderColor: '#DFE7ED',
     borderRadius: 14,
     padding: 20,
     gap: 16,
   },
-  record: { borderBottomWidth: 1, borderBottomColor: '#DFE5EF', paddingVertical: 18, gap: 12 },
+  record: { borderBottomWidth: 1, borderBottomColor: '#DFE7ED', paddingVertical: 18, gap: 12 },
   input: {
     borderWidth: 1,
     borderColor: '#CBD5E1',
@@ -620,7 +601,7 @@ const s = StyleSheet.create({
     color: '#253B56',
   },
   button: {
-    backgroundColor: '#005BEA',
+    backgroundColor: '#087F70',
     padding: 14,
     minHeight: 48,
     borderRadius: 8,
